@@ -13,3 +13,4 @@ export const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyl6ucMyd59t-
  */
 export const QURAN_API_BASE_URL = "https://api.alquran.cloud/v1";
 
+
