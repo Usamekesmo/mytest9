@@ -17,37 +17,53 @@ let activeChallenges = [];
 let quranMetadata = {}; 
 
 // --- 1. دالة التهيئة الرئيسية ---
+
+
+   // في ملف main.js
+
 async function initialize() {
     console.log("التطبيق قيد التشغيل...");
     
     ui.initializeLockedOptions();
 
-    // تعديل 4: جلب بيانات السور ديناميكياً عند بدء التشغيل مع بقية الإعدادات
-    [activeChallenges, quranMetadata] = await Promise.all([
-        fetchActiveChallenges(),
-        fetchQuranMetadata(), // <-- هذا السطر الجديد سيجلب بيانات كل السور
+    // عرض التحديات أولاً وهي في حالة "غير مفعلة"
+    const challengesPromise = fetchActiveChallenges();
+    challengesPromise.then(challenges => {
+        activeChallenges = challenges;
+        ui.displayChallenges(activeChallenges, startChallenge);
+    });
+
+    // جلب بقية البيانات بالتوازي
+    [quranMetadata] = await Promise.all([
+        fetchQuranMetadata(),
         quiz.initializeQuiz(),
         progression.initializeProgression()
     ]);
-    
-    // إضافة: تحقق للتأكد من أن بيانات السور قد تم جلبها بنجاح
+
     if (!quranMetadata) {
         console.error("فشل فادح: لم يتم تحميل بيانات السور. الميزات المتعلقة بالسور لن تعمل.");
-        quranMetadata = {}; // اجعله كائناً فارغاً لتجنب أخطاء لاحقة
+        quranMetadata = {};
     }
-
+    
     const rules = progression.getGameRules();
     if (rules) {
         ui.applyGameRules(rules);
     }
     
-    ui.displayChallenges(activeChallenges, startChallenge);
+    // تعديل: تفعيل أزرار التحديات بعد اكتمال كل عمليات التحميل
+    console.log("كل البيانات تم تحميلها. تفعيل أزرار التحديات...");
+    const challengeButtons = document.querySelectorAll('.challenge-item button');
+    challengeButtons.forEach(button => {
+        button.disabled = false;
+        button.textContent = "ابدأ التحدي";
+    });
     
     console.log("تم جلب جميع الإعدادات وتطبيق القواعد. التطبيق جاهز.");
     
     setupEventListeners();
     ui.showScreen(ui.startScreen);
 }
+
 
 // --- 2. ربط الأحداث (Event Listeners) ---
 function setupEventListeners() {
@@ -204,3 +220,4 @@ async function startTestWithSettings(pageNumber, questionsCount) {
 
 // --- 4. تشغيل التطبيق ---
 initialize();
+
