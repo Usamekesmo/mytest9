@@ -3,14 +3,14 @@
 // =============================================================
 
 import * as ui from './ui.js';
-import { fetchPageData, fetchActiveChallenges, fetchQuranMetadata } from './api.js';
+import { fetchPageData, fetchActiveChallenges } from './api.js';
 import * as quiz from './quiz.js';
 import * as player from './player.js';
 import * as progression from './progression.js';
 import * as store from './store.js';
+import { surahMetadata } from './quran-metadata.js'; // يعتمد على الملف الثابت
 
-let activeChallenges = [];
-let quranMetadata = {}; 
+let activeChallenges = []; // متغير عام لتخزين التحديات النشطة
 
 // --- 1. دالة التهيئة الرئيسية ---
 async function initialize() {
@@ -18,24 +18,19 @@ async function initialize() {
     
     ui.initializeLockedOptions();
 
-    // جلب بيانات السور مع بقية الإعدادات
-    [activeChallenges, quranMetadata] = await Promise.all([
+    // جلب كل الإعدادات والتحديات بالتوازي لزيادة السرعة
+    [activeChallenges] = await Promise.all([
         fetchActiveChallenges(),
-        fetchQuranMetadata(),
         quiz.initializeQuiz(),
         progression.initializeProgression()
     ]);
     
-    if (!quranMetadata) {
-        console.error("فشل فادح: لم يتم تحميل بيانات السور. الميزات المتعلقة بالسور لن تعمل.");
-        quranMetadata = {};
-    }
-
     const rules = progression.getGameRules();
     if (rules) {
         ui.applyGameRules(rules);
     }
     
+    // عرض التحديات المتاحة وتمرير دالة البدء
     ui.displayChallenges(activeChallenges, startChallenge);
     
     console.log("تم جلب جميع الإعدادات وتطبيق القواعد. التطبيق جاهز.");
@@ -106,7 +101,7 @@ async function onStartButtonClick() {
                 }
                 break;
             case 'surah':
-                const surahInfo = quranMetadata[item.value];
+                const surahInfo = surahMetadata[item.value];
                 if (surahInfo) {
                     for (let i = surahInfo.startPage; i <= surahInfo.endPage; i++) {
                         allowedPages.add(String(i));
@@ -162,19 +157,17 @@ function startChallenge(challengeId) {
             }
             break;
         case 'surah':
-            const surahInfo = quranMetadata[allowedContent];
+            const surahInfo = surahMetadata[allowedContent];
             if (surahInfo) {
                 for (let i = surahInfo.startPage; i <= surahInfo.endPage; i++) {
                     challengePages.push(String(i));
                 }
-            } else {
-                console.error(`خطأ: لم يتم العثور على معلومات للسورة رقم "${allowedContent}"`);
             }
             break;
     }
 
     if (challengePages.length === 0) {
-        alert("حدث خطأ في تحديد صفحات التحدي. تأكد من صحة البيانات في لوحة التحكم.");
+        alert("حدث خطأ في تحديد صفحات التحدي.");
         return;
     }
 
