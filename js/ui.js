@@ -66,6 +66,8 @@ export function applyGameRules(rules) {
 }
 
 // إضافة: دالة جديدة لعرض التحديات
+// في ملف ui.js
+
 export function displayChallenges(challenges, startChallengeCallback) {
     if (!challenges || challenges.length === 0) {
         challengesContainer.classList.add('hidden');
@@ -75,11 +77,13 @@ export function displayChallenges(challenges, startChallengeCallback) {
     challengesList.innerHTML = '';
     challenges.forEach(challenge => {
         const challengeDiv = document.createElement('div');
-        challengeDiv.className = 'challenge-item'; // ستحتاج لإضافة تنسيق CSS لهذا الكلاس
+        challengeDiv.className = 'challenge-item';
         challengeDiv.innerHTML = `
             <h4>${challenge.challengeName}</h4>
             <p>متاح حتى: ${new Date(challenge.endDate).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long' })}</p>
-            <button data-challenge-id="${challenge.challengeId}">ابدأ التحدي</button>
+            
+            <!-- تعديل: إضافة خاصية disabled للزر -->
+            <button data-challenge-id="${challenge.challengeId}" disabled>انتظر...</button>
         `;
         challengeDiv.querySelector('button').addEventListener('click', () => startChallengeCallback(challenge));
         challengesList.appendChild(challengeDiv);
@@ -87,6 +91,7 @@ export function displayChallenges(challenges, startChallengeCallback) {
 
     challengesContainer.classList.remove('hidden');
 }
+
 
 
 // --- 3. دوال خاصة بالاختبار ---
@@ -251,3 +256,4 @@ export function initializeLockedOptions() {
         husaryOption.hidden = true;
     }
 }
+
