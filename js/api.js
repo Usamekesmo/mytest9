@@ -6,11 +6,6 @@ import { SCRIPT_URL, QURAN_API_BASE_URL } from './config.js';
 
 // --- دوال جلب البيانات (GET Requests) ---
 
-/**
- * يجلب بيانات لاعب معين من Google Sheets.
- * @param {string} userName - اسم اللاعب.
- * @returns {Promise<object|null|string>} - بيانات اللاعب، أو null إذا لم يوجد، أو 'error' عند الفشل.
- */
 export async function fetchPlayer(userName) {
     const url = `${SCRIPT_URL}?action=getPlayer&userName=${encodeURIComponent(userName)}`;
     try {
@@ -26,10 +21,6 @@ export async function fetchPlayer(userName) {
     }
 }
 
-/**
- * يجلب قائمة الأسئلة المفعّلة من لوحة التحكم.
- * @returns {Promise<Array|null>} - مصفوفة بالأسئلة المفعّلة.
- */
 export async function fetchQuestionsConfig() {
     const url = `${SCRIPT_URL}?action=getQuestionsConfig`;
     try {
@@ -43,10 +34,6 @@ export async function fetchQuestionsConfig() {
     }
 }
 
-/**
- * يجلب إعدادات التقدم (المستويات والمتجر) من لوحة التحكم.
- * @returns {Promise<object|null>} - كائن يحتوي على المستويات وعناصر المتجر.
- */
 export async function fetchProgressionConfig() {
     const url = `${SCRIPT_URL}?action=getProgressionConfig`;
     try {
@@ -60,10 +47,6 @@ export async function fetchProgressionConfig() {
     }
 }
 
-/**
- * يجلب قواعد اللعبة المحددة من لوحة التحكم.
- * @returns {Promise<object|null>} - كائن يحتوي على قواعد اللعبة.
- */
 export async function fetchGameRules() {
     const url = `${SCRIPT_URL}?action=getGameRules`;
     try {
@@ -77,10 +60,6 @@ export async function fetchGameRules() {
     }
 }
 
-/**
- * يجلب التحديات النشطة من Google Sheets.
- * @returns {Promise<Array>} - مصفوفة بالتحديات النشطة.
- */
 export async function fetchActiveChallenges() {
     const url = `${SCRIPT_URL}?action=getActiveChallenges`;
     try {
@@ -90,65 +69,10 @@ export async function fetchActiveChallenges() {
         return (data.result === 'success') ? data.challenges : [];
     } catch (error) {
         console.error("Error fetching challenges:", error);
-        return []; // إرجاع مصفوفة فارغة عند الخطأ لمنع تعطل التطبيق
+        return [];
     }
 }
 
-/**
- * (الدالة الجديدة) يجلب البيانات الوصفية لكل سور القرآن (رقم السورة، الصفحات).
- * @returns {Promise<object|null>} - كائن يحتوي على بيانات السور.
- */
-export async function fetchQuranMetadata() {
-    const url = `${QURAN_API_BASE_URL}/meta`;
-    try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('فشل جلب بيانات القرآن الوصفية.');
-        const data = await response.json();
-        if (data.code === 200) {
-            const surahs = data.data.surahs.references;
-            const pages = data.data.pages.references;
-            
-            // بناء كائن يربط كل سورة بصفحة البداية والنهاية
-            const metadata = {};
-            surahs.forEach(surah => {
-                const startPage = pages.find(p => p.surah === surah.number && p.ayah === 1)?.page;
-                
-                // للعثور على صفحة النهاية، نجد صفحة بداية السورة التالية ونطرح 1
-                const nextSurah = surahs.find(s => s.number === surah.number + 1);
-                let endPage;
-                if (nextSurah) {
-                    const nextSurahStartPage = pages.find(p => p.surah === nextSurah.number && p.ayah === 1)?.page;
-                    // قد تكون هناك صفحات فارغة بين السور، لذا نطرح 1
-                    endPage = nextSurahStartPage - 1;
-                } else {
-                    // إذا كانت هذه هي السورة الأخيرة (الناس)
-                    endPage = 604; // آخر صفحة في المصحف
-                }
-
-                if (startPage && endPage) {
-                    metadata[surah.number] = {
-                        name: surah.name,
-                        startPage: startPage,
-                        endPage: endPage
-                    };
-                }
-            });
-            return metadata;
-        }
-        return null;
-    } catch (error) {
-        console.error("Error fetching Quran metadata:", error);
-        alert("لا يمكن جلب بيانات السور الأساسية. قد لا تعمل بعض الميزات.");
-        return null;
-    }
-}
-
-
-/**
- * يجلب آيات صفحة معينة من واجهة برمجة تطبيقات القرآن.
- * @param {string|number} pageNumber - رقم الصفحة.
- * @returns {Promise<Array|null>} - مصفوفة بآيات الصفحة.
- */
 export async function fetchPageData(pageNumber) {
     try {
         const [pageResponse, linesResponse] = await Promise.all([
@@ -159,7 +83,6 @@ export async function fetchPageData(pageNumber) {
         const linesData = await linesResponse.json();
 
         if (pageData.code === 200 && linesData.code === 200 && pageData.data.ayahs.length > 0) {
-            // دمج بيانات الأسطر مع بيانات الآيات
             return pageData.data.ayahs.map(ayah => {
                 const lineInfo = linesData.data.ayahs.find(la => la.number === ayah.number);
                 return { ...ayah, line: lineInfo ? lineInfo.line : null };
@@ -175,13 +98,8 @@ export async function fetchPageData(pageNumber) {
     }
 }
 
-
 // --- دوال إرسال البيانات (POST Requests) ---
 
-/**
- * يرسل بيانات لاعب ليتم حفظها أو تحديثها في Google Sheets.
- * @param {object} playerData - بيانات اللاعب.
- */
 export async function savePlayer(playerData) {
     try {
         await fetch(SCRIPT_URL, {
@@ -195,10 +113,6 @@ export async function savePlayer(playerData) {
     }
 }
 
-/**
- * يرسل نتيجة اختبار ليتم تسجيلها في Google Sheets.
- * @param {object} resultData - بيانات نتيجة الاختبار.
- */
 export async function saveResult(resultData) {
     try {
         await fetch(SCRIPT_URL, {
