@@ -2,68 +2,42 @@
 // ==      الملف الرئيسي (نقطة انطلاق التطبيق والغراء)        ==
 // =============================================================
 
-// تعديل 1: استيراد دالة fetchQuranMetadata الجديدة
 import * as ui from './ui.js';
-import { fetchPageData, fetchActiveChallenges, fetchQuranMetadata } from './api.js';
+import { fetchPageData, fetchActiveChallenges } from './api.js';
 import * as quiz from './quiz.js';
 import * as player from './player.js';
 import * as progression from './progression.js';
 import * as store from './store.js';
-// تعديل 2: حذف استيراد الملف الثابت، لم نعد بحاجة إليه
-// import { surahMetadata } from './quran-metadata.js'; 
+import { surahMetadata } from './quran-metadata.js'; // يعتمد على الملف الثابت
 
-let activeChallenges = [];
-// تعديل 3: إضافة متغير عام جديد لتخزين بيانات السور التي سيتم جلبها
-let quranMetadata = {}; 
+let activeChallenges = []; // متغير عام لتخزين التحديات النشطة
 
 // --- 1. دالة التهيئة الرئيسية ---
-
-
-   // في ملف main.js
-
 async function initialize() {
     console.log("التطبيق قيد التشغيل...");
     
     ui.initializeLockedOptions();
 
-    // عرض التحديات أولاً وهي في حالة "غير مفعلة"
-    const challengesPromise = fetchActiveChallenges();
-    challengesPromise.then(challenges => {
-        activeChallenges = challenges;
-        ui.displayChallenges(activeChallenges, startChallenge);
-    });
-
-    // جلب بقية البيانات بالتوازي
-    [quranMetadata] = await Promise.all([
-        fetchQuranMetadata(),
+    // جلب كل الإعدادات والتحديات بالتوازي لزيادة السرعة
+    [activeChallenges] = await Promise.all([
+        fetchActiveChallenges(),
         quiz.initializeQuiz(),
         progression.initializeProgression()
     ]);
-
-    if (!quranMetadata) {
-        console.error("فشل فادح: لم يتم تحميل بيانات السور. الميزات المتعلقة بالسور لن تعمل.");
-        quranMetadata = {};
-    }
     
     const rules = progression.getGameRules();
     if (rules) {
         ui.applyGameRules(rules);
     }
     
-    // تعديل: تفعيل أزرار التحديات بعد اكتمال كل عمليات التحميل
-    console.log("كل البيانات تم تحميلها. تفعيل أزرار التحديات...");
-    const challengeButtons = document.querySelectorAll('.challenge-item button');
-    challengeButtons.forEach(button => {
-        button.disabled = false;
-        button.textContent = "ابدأ التحدي";
-    });
+    // عرض التحديات المتاحة وتمرير دالة البدء
+    ui.displayChallenges(activeChallenges, startChallenge);
     
     console.log("تم جلب جميع الإعدادات وتطبيق القواعد. التطبيق جاهز.");
     
     setupEventListeners();
     ui.showScreen(ui.startScreen);
 }
-
 
 // --- 2. ربط الأحداث (Event Listeners) ---
 function setupEventListeners() {
@@ -132,8 +106,7 @@ async function onStartButtonClick() {
                 }
                 break;
             case 'surah':
-                // تعديل 5: الكود هنا سيستخدم الآن المتغير العام الديناميكي `quranMetadata`
-                const surahInfo = quranMetadata[item.value];
+                const surahInfo = surahMetadata[item.value];
                 if (surahInfo) {
                     for (let i = surahInfo.startPage; i <= surahInfo.endPage; i++) {
                         allowedPages.add(String(i));
@@ -180,8 +153,7 @@ function startChallenge(challenge) {
             for (let i = start; i <= end; i++) challengePages.push(String(i));
             break;
         case 'surah':
-            // تعديل 6: الكود هنا أيضاً سيستخدم المتغير العام الديناميكي `quranMetadata`
-            const surahInfo = quranMetadata[challenge.allowedContent];
+            const surahInfo = surahMetadata[challenge.allowedContent];
             if (surahInfo) {
                 for (let i = surahInfo.startPage; i <= surahInfo.endPage; i++) challengePages.push(String(i));
             }
@@ -220,4 +192,3 @@ async function startTestWithSettings(pageNumber, questionsCount) {
 
 // --- 4. تشغيل التطبيق ---
 initialize();
-
