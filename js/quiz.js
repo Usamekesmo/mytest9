@@ -139,5 +139,17 @@ async function endQuiz() {
     await saveResult(state);
     ui.updateSaveMessage(true);
 }
+// في ملف quiz.js
+
+// ... (كل الكود الحالي يبقى كما هو) ...
+
+/**
+ * دالة مساعدة جديدة لتصدير حالة الاختبار الحالية.
+ * @returns {object} - كائن حالة الاختبار.
+ */
+export function getCurrentState() {
+    return state;
+}
 
 // ▼▼▼ تم حذف السطر المسبب للمشكلة من هنا ▼▼▼
+
