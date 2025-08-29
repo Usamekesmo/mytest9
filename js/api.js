@@ -78,7 +78,7 @@ export async function fetchGameRules() {
 }
 
 /**
- * إضافة: دالة جديدة لجلب التحديات النشطة من Google Sheets.
+ * يجلب التحديات النشطة من Google Sheets.
  * @returns {Promise<Array>} - مصفوفة بالتحديات النشطة.
  */
 export async function fetchActiveChallenges() {
@@ -91,6 +91,55 @@ export async function fetchActiveChallenges() {
     } catch (error) {
         console.error("Error fetching challenges:", error);
         return []; // إرجاع مصفوفة فارغة عند الخطأ لمنع تعطل التطبيق
+    }
+}
+
+/**
+ * (الدالة الجديدة) يجلب البيانات الوصفية لكل سور القرآن (رقم السورة، الصفحات).
+ * @returns {Promise<object|null>} - كائن يحتوي على بيانات السور.
+ */
+export async function fetchQuranMetadata() {
+    const url = `${QURAN_API_BASE_URL}/meta`;
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('فشل جلب بيانات القرآن الوصفية.');
+        const data = await response.json();
+        if (data.code === 200) {
+            const surahs = data.data.surahs.references;
+            const pages = data.data.pages.references;
+            
+            // بناء كائن يربط كل سورة بصفحة البداية والنهاية
+            const metadata = {};
+            surahs.forEach(surah => {
+                const startPage = pages.find(p => p.surah === surah.number && p.ayah === 1)?.page;
+                
+                // للعثور على صفحة النهاية، نجد صفحة بداية السورة التالية ونطرح 1
+                const nextSurah = surahs.find(s => s.number === surah.number + 1);
+                let endPage;
+                if (nextSurah) {
+                    const nextSurahStartPage = pages.find(p => p.surah === nextSurah.number && p.ayah === 1)?.page;
+                    // قد تكون هناك صفحات فارغة بين السور، لذا نطرح 1
+                    endPage = nextSurahStartPage - 1;
+                } else {
+                    // إذا كانت هذه هي السورة الأخيرة (الناس)
+                    endPage = 604; // آخر صفحة في المصحف
+                }
+
+                if (startPage && endPage) {
+                    metadata[surah.number] = {
+                        name: surah.name,
+                        startPage: startPage,
+                        endPage: endPage
+                    };
+                }
+            });
+            return metadata;
+        }
+        return null;
+    } catch (error) {
+        console.error("Error fetching Quran metadata:", error);
+        alert("لا يمكن جلب بيانات السور الأساسية. قد لا تعمل بعض الميزات.");
+        return null;
     }
 }
 
@@ -126,54 +175,6 @@ export async function fetchPageData(pageNumber) {
     }
 }
 
-// في ملف api.js
-
-/**
- * يجلب البيانات الوصفية لكل سور القرآن (رقم السورة، الصفحات).
- * @returns {Promise<object|null>} - كائن يحتوي على بيانات السور.
- */
-export async function fetchQuranMetadata() {
-    const url = `${QURAN_API_BASE_URL}/meta`;
-    try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('فشل جلب بيانات القرآن الوصفية.');
-        const data = await response.json();
-        if (data.code === 200) {
-            const surahs = data.data.surahs.references;
-            const pages = data.data.pages.references;
-            
-            // بناء كائن يربط كل سورة بصفحة البداية والنهاية
-            const metadata = {};
-            surahs.forEach(surah => {
-                const startPage = pages.find(p => p.surah === surah.number && p.ayah === 1)?.page;
-                // للعثور على صفحة النهاية، نجد صفحة بداية السورة التالية ونطرح 1
-                // أو نستخدم آخر صفحة في القرآن إذا كانت هذه هي السورة الأخيرة
-                const nextSurah = surahs.find(s => s.number === surah.number + 1);
-                let endPage;
-                if (nextSurah) {
-                    const nextSurahStartPage = pages.find(p => p.surah === nextSurah.number && p.ayah === 1)?.page;
-                    endPage = nextSurahStartPage - 1;
-                } else {
-                    endPage = 604; // آخر صفحة في المصحف
-                }
-
-                if (startPage && endPage) {
-                    metadata[surah.number] = {
-                        name: surah.name,
-                        startPage: startPage,
-                        endPage: endPage
-                    };
-                }
-            });
-            return metadata;
-        }
-        return null;
-    } catch (error) {
-        console.error("Error fetching Quran metadata:", error);
-        alert("لا يمكن جلب بيانات السور الأساسية. قد لا تعمل بعض الميزات.");
-        return null;
-    }
-}
 
 // --- دوال إرسال البيانات (POST Requests) ---
 
@@ -210,4 +211,3 @@ export async function saveResult(resultData) {
         console.error("Error saving result:", error);
     }
 }
-
