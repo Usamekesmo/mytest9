@@ -70,6 +70,9 @@ export function applyGameRules(rules) {
     questionsCountSelect.value = rules.questionsCount || 5;
 }
 
+
+      // في ملف ui.js
+
 export function displayChallenges(challenges, startChallengeCallback) {
     if (!challenges || challenges.length === 0) {
         challengesContainer.classList.add('hidden');
@@ -85,16 +88,14 @@ export function displayChallenges(challenges, startChallengeCallback) {
             <p>متاح حتى: ${new Date(challenge.endDate).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long' })}</p>
             <button data-challenge-id="${challenge.challengeId}">ابدأ التحدي</button>
         `;
-        challengeDiv.querySelector('button').addEventListener('click', () => startChallengeCallback(challenge));
+        // تعديل مهم: نمرر فقط الـ ID للدالة
+        challengeDiv.querySelector('button').addEventListener('click', () => startChallengeCallback(challenge.challengeId));
         challengesList.appendChild(challengeDiv);
     });
 
     challengesContainer.classList.remove('hidden');
 }
 
-
-// --- 3. دوال خاصة بالاختبار ---
-// ... (بقية الدوال تبقى كما هي) ...
 export function updateProgress(current, total, isEnd = false) {
     progressCounter.textContent = `السؤال ${current} من ${total}`;
     progressBar.style.width = `${(current / total) * 100}%`;
@@ -243,3 +244,4 @@ export function initializeLockedOptions() {
         husaryOption.hidden = true;
     }
 }
+
