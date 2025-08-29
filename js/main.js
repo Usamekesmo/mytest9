@@ -135,7 +135,7 @@ async function onStartButtonClick() {
 }
 
 /**
- * دالة جديدة لبدء اختبار التحدي.
+ * دالة جديدة لبدء اختبار التحدي (مع إضافة كود تشخيصي).
  */
 function startChallenge(challenge) {
     if (ui.userNameInput.disabled === false) {
@@ -143,22 +143,52 @@ function startChallenge(challenge) {
         return;
     }
 
+    // --- بداية الكود التشخيصي ---
+    console.log("===================================");
+    console.log("بدء تشخيص التحدي...");
+    console.log("بيانات التحدي المستلمة من الواجهة:", challenge);
+    console.log("نوع المحتوى (contentType):", challenge.contentType, "من نوع:", typeof challenge.contentType);
+    console.log("قيمة المحتوى (allowedContent):", challenge.allowedContent, "من نوع:", typeof challenge.allowedContent);
+    console.log("هل surahMetadata متاح؟", !!surahMetadata);
+    // --- نهاية الكود التشخيصي ---
+
     let challengePages = [];
-    switch (challenge.contentType) {
+    // نستخدم String().trim() لضمان إزالة أي مسافات غير مرئية قد تأتي من Google Sheets
+    const contentType = String(challenge.contentType).trim();
+    const allowedContent = String(challenge.allowedContent).trim();
+
+    switch (contentType) {
         case 'page':
-            challengePages.push(challenge.allowedContent);
+            challengePages.push(allowedContent);
             break;
         case 'range':
-            const [start, end] = String(challenge.allowedContent).split('-').map(Number);
-            for (let i = start; i <= end; i++) challengePages.push(String(i));
-            break;
-        case 'surah':
-            const surahInfo = surahMetadata[challenge.allowedContent];
-            if (surahInfo) {
-                for (let i = surahInfo.startPage; i <= surahInfo.endPage; i++) challengePages.push(String(i));
+            const [start, end] = allowedContent.split('-').map(Number);
+            for (let i = start; i <= end; i++) {
+                challengePages.push(String(i));
             }
             break;
+        case 'surah':
+            // --- كود تشخيصي إضافي للسور ---
+            console.log(`البحث عن السورة رقم: "${allowedContent}" في surahMetadata.`);
+            const surahInfo = surahMetadata[allowedContent];
+            if (surahInfo) {
+                console.log("تم العثور على معلومات السورة:", surahInfo);
+                for (let i = surahInfo.startPage; i <= surahInfo.endPage; i++) {
+                    challengePages.push(String(i));
+                }
+            } else {
+                console.error(`خطأ: لم يتم العثور على معلومات للسورة رقم "${allowedContent}" في surahMetadata.`);
+                // لغرض التشخيص، اطبع أول 5 مفاتيح من surahMetadata لترى كيف تبدو
+                console.log("مفاتيح العينة من surahMetadata:", Object.keys(surahMetadata).slice(0, 5));
+            }
+            break;
+        default:
+            console.error(`نوع المحتوى "${contentType}" غير معروف.`);
     }
+
+    console.log("قائمة الصفحات النهائية التي تم إنشاؤها:", challengePages);
+    console.log("===================================");
+
 
     if (challengePages.length === 0) {
         alert("حدث خطأ في تحديد صفحات التحدي.");
