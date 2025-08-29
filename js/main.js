@@ -2,15 +2,19 @@
 // ==      الملف الرئيسي (نقطة انطلاق التطبيق والغراء)        ==
 // =============================================================
 
+// تعديل 1: استيراد دالة fetchQuranMetadata الجديدة
 import * as ui from './ui.js';
-import { fetchPageData, fetchActiveChallenges } from './api.js';
+import { fetchPageData, fetchActiveChallenges, fetchQuranMetadata } from './api.js';
 import * as quiz from './quiz.js';
 import * as player from './player.js';
 import * as progression from './progression.js';
 import * as store from './store.js';
-import { surahMetadata } from './quran-metadata.js'; // تأكد من وجود هذا الملف
+// تعديل 2: حذف استيراد الملف الثابت، لم نعد بحاجة إليه
+// import { surahMetadata } from './quran-metadata.js'; 
 
-let activeChallenges = []; // متغير عام لتخزين التحديات النشطة
+let activeChallenges = [];
+// تعديل 3: إضافة متغير عام جديد لتخزين بيانات السور التي سيتم جلبها
+let quranMetadata = {}; 
 
 // --- 1. دالة التهيئة الرئيسية ---
 async function initialize() {
@@ -18,19 +22,25 @@ async function initialize() {
     
     ui.initializeLockedOptions();
 
-    // جلب كل الإعدادات والتحديات بالتوازي لزيادة السرعة
-    [activeChallenges] = await Promise.all([
+    // تعديل 4: جلب بيانات السور ديناميكياً عند بدء التشغيل مع بقية الإعدادات
+    [activeChallenges, quranMetadata] = await Promise.all([
         fetchActiveChallenges(),
+        fetchQuranMetadata(), // <-- هذا السطر الجديد سيجلب بيانات كل السور
         quiz.initializeQuiz(),
         progression.initializeProgression()
     ]);
     
+    // إضافة: تحقق للتأكد من أن بيانات السور قد تم جلبها بنجاح
+    if (!quranMetadata) {
+        console.error("فشل فادح: لم يتم تحميل بيانات السور. الميزات المتعلقة بالسور لن تعمل.");
+        quranMetadata = {}; // اجعله كائناً فارغاً لتجنب أخطاء لاحقة
+    }
+
     const rules = progression.getGameRules();
     if (rules) {
         ui.applyGameRules(rules);
     }
     
-    // عرض التحديات المتاحة وتمرير دالة البدء
     ui.displayChallenges(activeChallenges, startChallenge);
     
     console.log("تم جلب جميع الإعدادات وتطبيق القواعد. التطبيق جاهز.");
@@ -51,7 +61,6 @@ function setupEventListeners() {
  * يتم تشغيلها عند النقر على زر "المتجر".
  */
 function onStoreButtonClick() {
-    // لا يمكن فتح المتجر قبل تسجيل الدخول
     if (ui.userNameInput.disabled === false) {
         alert("الرجاء إدخال اسمك وتسجيل الدخول أولاً لزيارة المتجر.");
         return;
@@ -73,13 +82,11 @@ async function onStartButtonClick() {
         const playerLoaded = await player.loadPlayer(userName);
         ui.toggleLoader(false);
 
-        if (!playerLoaded) return; // في حالة فشل التحميل
+        if (!playerLoaded) return;
 
-        // تطبيق تأثيرات العناصر التي يمتلكها اللاعب
         const allStoreItems = progression.getStoreItems();
         ui.applyInventoryEffects(player.playerData.inventory, allStoreItems);
 
-        // عرض معلومات اللاعب وتعطيل حقل الاسم
         const levelInfo = progression.getLevelInfo(player.playerData.xp);
         ui.updatePlayerDisplay(player.playerData, levelInfo);
         ui.userNameInput.disabled = true;
@@ -94,7 +101,6 @@ async function onStartButtonClick() {
     const allStoreItems = progression.getStoreItems();
     const playerInventory = player.playerData.inventory;
 
-    // تحديد كل الصفحات المتاحة للاعب من القواعد والمشتريات
     let allowedPages = new Set(String(rules.allowedPages || '').split(',').map(p => p.trim()));
     const purchasedItems = allStoreItems.filter(item => playerInventory.includes(item.id));
 
@@ -110,7 +116,8 @@ async function onStartButtonClick() {
                 }
                 break;
             case 'surah':
-                const surahInfo = surahMetadata[item.value];
+                // تعديل 5: الكود هنا سيستخدم الآن المتغير العام الديناميكي `quranMetadata`
+                const surahInfo = quranMetadata[item.value];
                 if (surahInfo) {
                     for (let i = surahInfo.startPage; i <= surahInfo.endPage; i++) {
                         allowedPages.add(String(i));
@@ -120,14 +127,13 @@ async function onStartButtonClick() {
         }
     });
     
-    const finalAllowedPages = Array.from(allowedPages).filter(p => p); // إزالة القيم الفارغة
+    const finalAllowedPages = Array.from(allowedPages).filter(p => p);
 
     if (!pageNumberInput || !finalAllowedPages.includes(pageNumberInput)) {
         alert(`الرجاء إدخال رقم صفحة مسموح به فقط. الصفحات المتاحة لك تشمل: ${finalAllowedPages.slice(0, 10).join(', ')}...`);
         return;
     }
 
-    // تحديد عدد الأسئلة بناءً على المشتريات أو القواعد
     const purchasedQuestionCounts = purchasedItems
         .filter(item => item.type === 'q_count')
         .map(item => parseInt(item.value, 10));
@@ -141,7 +147,6 @@ async function onStartButtonClick() {
 
 /**
  * دالة جديدة لبدء اختبار التحدي.
- * @param {object} challenge - كائن التحدي الذي تم النقر عليه.
  */
 function startChallenge(challenge) {
     if (ui.userNameInput.disabled === false) {
@@ -159,7 +164,8 @@ function startChallenge(challenge) {
             for (let i = start; i <= end; i++) challengePages.push(String(i));
             break;
         case 'surah':
-            const surahInfo = surahMetadata[challenge.allowedContent];
+            // تعديل 6: الكود هنا أيضاً سيستخدم المتغير العام الديناميكي `quranMetadata`
+            const surahInfo = quranMetadata[challenge.allowedContent];
             if (surahInfo) {
                 for (let i = surahInfo.startPage; i <= surahInfo.endPage; i++) challengePages.push(String(i));
             }
@@ -171,7 +177,6 @@ function startChallenge(challenge) {
         return;
     }
 
-    // اختيار صفحة عشوائية من صفحات التحدي لبدء الاختبار
     const randomPage = challengePages[Math.floor(Math.random() * challengePages.length)];
     console.log(`بدء التحدي "${challenge.challengeName}" من صفحة عشوائية: ${randomPage}`);
     
@@ -179,9 +184,7 @@ function startChallenge(challenge) {
 }
 
 /**
- * دالة مساعدة لبدء الاختبار بإعدادات محددة (لتجنب تكرار الكود).
- * @param {string} pageNumber - رقم الصفحة لبدء الاختبار.
- * @param {number} questionsCount - عدد الأسئلة في الاختبار.
+ * دالة مساعدة لبدء الاختبار بإعدادات محددة.
  */
 async function startTestWithSettings(pageNumber, questionsCount) {
     ui.toggleLoader(true);
