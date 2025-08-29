@@ -3,14 +3,14 @@
 // =============================================================
 
 import * as ui from './ui.js';
-import { fetchPageData, fetchActiveChallenges } from './api.js';
+import { fetchPageData, fetchActiveChallenges, fetchQuranMetadata } from './api.js';
 import * as quiz from './quiz.js';
 import * as player from './player.js';
 import * as progression from './progression.js';
 import * as store from './store.js';
-import { surahMetadata } from './quran-metadata.js'; // يعتمد على الملف الثابت
 
-let activeChallenges = []; // متغير عام لتخزين التحديات النشطة
+let activeChallenges = [];
+let quranMetadata = {}; 
 
 // --- 1. دالة التهيئة الرئيسية ---
 async function initialize() {
@@ -18,19 +18,24 @@ async function initialize() {
     
     ui.initializeLockedOptions();
 
-    // جلب كل الإعدادات والتحديات بالتوازي لزيادة السرعة
-    [activeChallenges] = await Promise.all([
+    // جلب بيانات السور مع بقية الإعدادات
+    [activeChallenges, quranMetadata] = await Promise.all([
         fetchActiveChallenges(),
+        fetchQuranMetadata(),
         quiz.initializeQuiz(),
         progression.initializeProgression()
     ]);
     
+    if (!quranMetadata) {
+        console.error("فشل فادح: لم يتم تحميل بيانات السور. الميزات المتعلقة بالسور لن تعمل.");
+        quranMetadata = {};
+    }
+
     const rules = progression.getGameRules();
     if (rules) {
         ui.applyGameRules(rules);
     }
     
-    // عرض التحديات المتاحة وتمرير دالة البدء
     ui.displayChallenges(activeChallenges, startChallenge);
     
     console.log("تم جلب جميع الإعدادات وتطبيق القواعد. التطبيق جاهز.");
@@ -47,9 +52,6 @@ function setupEventListeners() {
     ui.closeStoreButton.addEventListener('click', () => ui.showScreen(ui.startScreen));
 }
 
-/**
- * يتم تشغيلها عند النقر على زر "المتجر".
- */
 function onStoreButtonClick() {
     if (ui.userNameInput.disabled === false) {
         alert("الرجاء إدخال اسمك وتسجيل الدخول أولاً لزيارة المتجر.");
@@ -66,7 +68,6 @@ async function onStartButtonClick() {
         return;
     }
 
-    // --- الحالة الأولى: تسجيل الدخول ---
     if (ui.userNameInput.disabled === false) {
         ui.toggleLoader(true);
         const playerLoaded = await player.loadPlayer(userName);
@@ -85,7 +86,6 @@ async function onStartButtonClick() {
         return;
     }
 
-    // --- الحالة الثانية: بدء الاختبار العادي ---
     const pageNumberInput = ui.pageNumberInput.value;
     const rules = progression.getGameRules();
     const allStoreItems = progression.getStoreItems();
@@ -106,7 +106,7 @@ async function onStartButtonClick() {
                 }
                 break;
             case 'surah':
-                const surahInfo = surahMetadata[item.value];
+                const surahInfo = quranMetadata[item.value];
                 if (surahInfo) {
                     for (let i = surahInfo.startPage; i <= surahInfo.endPage; i++) {
                         allowedPages.add(String(i));
@@ -134,17 +134,9 @@ async function onStartButtonClick() {
     startTestWithSettings(pageNumberInput, questionsCount);
 }
 
-// في ملف main.js
-
-/**
- * دالة جديدة لبدء اختبار التحدي (تقبل الـ ID وتبحث عن التحدي).
- * @param {string} challengeId - معرف التحدي الذي تم النقر عليه.
- */
 function startChallenge(challengeId) {
-    // الخطوة 1: ابحث عن كائن التحدي الكامل باستخدام الـ ID
     const challenge = activeChallenges.find(c => c.challengeId === challengeId);
 
-    // التحقق من العثور على التحدي
     if (!challenge) {
         alert("خطأ: لم يتم العثور على بيانات التحدي. حاول تحديث الصفحة.");
         return;
@@ -154,15 +146,6 @@ function startChallenge(challengeId) {
         alert("الرجاء تسجيل الدخول أولاً للمشاركة في التحدي.");
         return;
     }
-
-    // --- بداية الكود التشخيصي (الذي يجب أن يعمل الآن) ---
-    console.log("===================================");
-    console.log("بدء تشخيص التحدي...");
-    console.log("بيانات التحدي التي تم العثور عليها:", challenge);
-    console.log("نوع المحتوى (contentType):", challenge.contentType);
-    console.log("قيمة المحتوى (allowedContent):", challenge.allowedContent);
-    console.log("هل surahMetadata متاح؟", !!surahMetadata);
-    // --- نهاية الكود التشخيصي ---
 
     let challengePages = [];
     const contentType = String(challenge.contentType).trim();
@@ -179,33 +162,23 @@ function startChallenge(challengeId) {
             }
             break;
         case 'surah':
-            console.log(`البحث عن السورة رقم: "${allowedContent}" في surahMetadata.`);
-            const surahInfo = surahMetadata[allowedContent];
+            const surahInfo = quranMetadata[allowedContent];
             if (surahInfo) {
-                console.log("تم العثور على معلومات السورة:", surahInfo);
                 for (let i = surahInfo.startPage; i <= surahInfo.endPage; i++) {
                     challengePages.push(String(i));
                 }
             } else {
-                console.error(`خطأ: لم يتم العثور على معلومات للسورة رقم "${allowedContent}" في surahMetadata.`);
-                console.log("مفاتيح العينة من surahMetadata:", Object.keys(surahMetadata).slice(0, 5));
+                console.error(`خطأ: لم يتم العثور على معلومات للسورة رقم "${allowedContent}"`);
             }
             break;
-        default:
-            console.error(`نوع المحتوى "${contentType}" غير معروف.`);
     }
 
-    console.log("قائمة الصفحات النهائية التي تم إنشاؤها:", challengePages);
-    console.log("===================================");
-
     if (challengePages.length === 0) {
-        alert("حدث خطأ في تحديد صفحات التحدي.");
+        alert("حدث خطأ في تحديد صفحات التحدي. تأكد من صحة البيانات في لوحة التحكم.");
         return;
     }
 
     const randomPage = challengePages[Math.floor(Math.random() * challengePages.length)];
-    console.log(`بدء التحدي "${challenge.challengeName}" من صفحة عشوائية: ${randomPage}`);
-    
     startTestWithSettings(randomPage, challenge.questionsCount);
 }
 
@@ -227,4 +200,3 @@ async function startTestWithSettings(pageNumber, questionsCount) {
 
 // --- 4. تشغيل التطبيق ---
 initialize();
-
