@@ -30,7 +30,6 @@ export const playerInfoDiv = document.getElementById('player-info');
 export const storeItemsContainer = document.getElementById('store-items-container');
 export const playerDiamondsDisplay = document.getElementById('player-diamonds-display');
 
-// إضافة: عناصر واجهة التحديات
 export const challengesContainer = document.getElementById('challenges-container');
 export const challengesList = document.getElementById('challenges-list');
 
@@ -51,10 +50,16 @@ export function toggleLoader(show) {
 
 export function updatePlayerDisplay(playerData, levelInfo) {
     playerInfoDiv.innerHTML = `
-        <p>مرحباً <strong>${playerData.name}</strong></p>
-        <p>المستوى: ${levelInfo.level} (${levelInfo.title}) | الألماس: ${playerData.diamonds} 💎</p>
-        <div class="progress-container" style="background:#e0e0e0; border-radius:5px; padding:2px;">
-            <div class="progress-bar" style="width:${levelInfo.progress}%; height:8px; background:#00796b; border-radius:5px;"></div>
+        <div class="player-profile">
+            <p class="player-name">مرحباً <strong>${playerData.name}</strong></p>
+            <div class="player-stats">
+                <span>الخبرة: ${playerData.xp} XP</span>
+                <span>الألماس: ${playerData.diamonds} 💎</span>
+            </div>
+            <p class="player-level">المستوى: ${levelInfo.level} (${levelInfo.title})</p>
+            <div class="progress-container" title="التقدم للمستوى التالي">
+                <div class="progress-bar" style="width:${levelInfo.progress}%;"></div>
+            </div>
         </div>
     `;
     playerInfoDiv.classList.remove('hidden');
@@ -64,9 +69,6 @@ export function applyGameRules(rules) {
     pageNumberInput.placeholder = `أدخل صفحة: ${rules.allowedPages || '1-604'}`;
     questionsCountSelect.value = rules.questionsCount || 5;
 }
-
-// إضافة: دالة جديدة لعرض التحديات
-// في ملف ui.js
 
 export function displayChallenges(challenges, startChallengeCallback) {
     if (!challenges || challenges.length === 0) {
@@ -81,9 +83,7 @@ export function displayChallenges(challenges, startChallengeCallback) {
         challengeDiv.innerHTML = `
             <h4>${challenge.challengeName}</h4>
             <p>متاح حتى: ${new Date(challenge.endDate).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long' })}</p>
-            
-            <!-- تعديل: إضافة خاصية disabled للزر -->
-            <button data-challenge-id="${challenge.challengeId}" disabled>انتظر...</button>
+            <button data-challenge-id="${challenge.challengeId}">ابدأ التحدي</button>
         `;
         challengeDiv.querySelector('button').addEventListener('click', () => startChallengeCallback(challenge));
         challengesList.appendChild(challengeDiv);
@@ -93,9 +93,8 @@ export function displayChallenges(challenges, startChallengeCallback) {
 }
 
 
-
 // --- 3. دوال خاصة بالاختبار ---
-
+// ... (بقية الدوال تبقى كما هي) ...
 export function updateProgress(current, total, isEnd = false) {
     progressCounter.textContent = `السؤال ${current} من ${total}`;
     progressBar.style.width = `${(current / total) * 100}%`;
@@ -117,11 +116,6 @@ export function markAnswer(clickedElement, isCorrect) {
     const wrongClass = 'wrong-answer';
     
     clickedElement.classList.add(isCorrect ? correctClass : wrongClass);
-    
-    if (!isCorrect) {
-        // هذا الجزء يمكن تحسينه ليعمل بشكل أفضل مع كل أنواع الأسئلة
-        // لكنه يظل كافياً للحالة العامة
-    }
 }
 
 export function disableQuestionInteraction() {
@@ -130,9 +124,8 @@ export function disableQuestionInteraction() {
     });
 }
 
-
 // --- 4. دوال خاصة بالنتائج ومراجعة الأخطاء ---
-
+// ... (بقية الدوال تبقى كما هي) ...
 export function displayErrorReview(errors) {
     errorList.innerHTML = '';
     errors.forEach(error => {
@@ -176,9 +169,8 @@ export function updateSaveMessage(isSuccess) {
     }
 }
 
-
 // --- 5. دوال خاصة بالمتجر وتأثيراته ---
-
+// ... (بقية الدوال تبقى كما هي) ...
 export function displayStore(storeItems, playerData, purchaseCallback) {
     playerDiamondsDisplay.innerHTML = `${playerData.diamonds} 💎`;
     storeItemsContainer.innerHTML = '';
@@ -213,11 +205,10 @@ export function displayStore(storeItems, playerData, purchaseCallback) {
     });
 }
 
-// تعديل: تحديث دالة تطبيق تأثيرات الممتلكات لتكون أكثر شمولية
 export function applyInventoryEffects(inventory, storeItems) {
     console.log("تطبيق تأثيرات الممتلكات:", inventory);
     
-    document.body.className = ''; // يزيل كل كلاسات الثيمات السابقة
+    document.body.className = '';
     qariSelect.querySelectorAll('option[data-locked="true"]').forEach(opt => {
         opt.hidden = true;
     });
@@ -238,9 +229,6 @@ export function applyInventoryEffects(inventory, storeItems) {
                     qariOption.textContent = qariOption.textContent.replace(/\(.*\)/, '(متاح)');
                 }
                 break;
-            
-            // الأنواع الأخرى مثل 'page', 'question', 'q_count' يتم التعامل معها في منطق بدء الاختبار
-            // لذا لا نحتاج لعمل شيء هنا
         }
     });
 }
@@ -249,11 +237,9 @@ export function initializeLockedOptions() {
     qariSelect.querySelectorAll('option[data-locked="true"]').forEach(opt => {
         opt.hidden = true;
     });
-    // مثال:
     const husaryOption = qariSelect.querySelector('option[value="ar.husary"]');
     if (husaryOption) {
         husaryOption.dataset.locked = "true";
         husaryOption.hidden = true;
     }
 }
-
