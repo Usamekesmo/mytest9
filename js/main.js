@@ -134,26 +134,37 @@ async function onStartButtonClick() {
     startTestWithSettings(pageNumberInput, questionsCount);
 }
 
+// في ملف main.js
+
 /**
- * دالة جديدة لبدء اختبار التحدي (مع إضافة كود تشخيصي).
+ * دالة جديدة لبدء اختبار التحدي (تقبل الـ ID وتبحث عن التحدي).
+ * @param {string} challengeId - معرف التحدي الذي تم النقر عليه.
  */
-function startChallenge(challenge) {
+function startChallenge(challengeId) {
+    // الخطوة 1: ابحث عن كائن التحدي الكامل باستخدام الـ ID
+    const challenge = activeChallenges.find(c => c.challengeId === challengeId);
+
+    // التحقق من العثور على التحدي
+    if (!challenge) {
+        alert("خطأ: لم يتم العثور على بيانات التحدي. حاول تحديث الصفحة.");
+        return;
+    }
+
     if (ui.userNameInput.disabled === false) {
         alert("الرجاء تسجيل الدخول أولاً للمشاركة في التحدي.");
         return;
     }
 
-    // --- بداية الكود التشخيصي ---
+    // --- بداية الكود التشخيصي (الذي يجب أن يعمل الآن) ---
     console.log("===================================");
     console.log("بدء تشخيص التحدي...");
-    console.log("بيانات التحدي المستلمة من الواجهة:", challenge);
-    console.log("نوع المحتوى (contentType):", challenge.contentType, "من نوع:", typeof challenge.contentType);
-    console.log("قيمة المحتوى (allowedContent):", challenge.allowedContent, "من نوع:", typeof challenge.allowedContent);
+    console.log("بيانات التحدي التي تم العثور عليها:", challenge);
+    console.log("نوع المحتوى (contentType):", challenge.contentType);
+    console.log("قيمة المحتوى (allowedContent):", challenge.allowedContent);
     console.log("هل surahMetadata متاح؟", !!surahMetadata);
     // --- نهاية الكود التشخيصي ---
 
     let challengePages = [];
-    // نستخدم String().trim() لضمان إزالة أي مسافات غير مرئية قد تأتي من Google Sheets
     const contentType = String(challenge.contentType).trim();
     const allowedContent = String(challenge.allowedContent).trim();
 
@@ -168,7 +179,6 @@ function startChallenge(challenge) {
             }
             break;
         case 'surah':
-            // --- كود تشخيصي إضافي للسور ---
             console.log(`البحث عن السورة رقم: "${allowedContent}" في surahMetadata.`);
             const surahInfo = surahMetadata[allowedContent];
             if (surahInfo) {
@@ -178,7 +188,6 @@ function startChallenge(challenge) {
                 }
             } else {
                 console.error(`خطأ: لم يتم العثور على معلومات للسورة رقم "${allowedContent}" في surahMetadata.`);
-                // لغرض التشخيص، اطبع أول 5 مفاتيح من surahMetadata لترى كيف تبدو
                 console.log("مفاتيح العينة من surahMetadata:", Object.keys(surahMetadata).slice(0, 5));
             }
             break;
@@ -188,7 +197,6 @@ function startChallenge(challenge) {
 
     console.log("قائمة الصفحات النهائية التي تم إنشاؤها:", challengePages);
     console.log("===================================");
-
 
     if (challengePages.length === 0) {
         alert("حدث خطأ في تحديد صفحات التحدي.");
@@ -201,9 +209,6 @@ function startChallenge(challenge) {
     startTestWithSettings(randomPage, challenge.questionsCount);
 }
 
-/**
- * دالة مساعدة لبدء الاختبار بإعدادات محددة.
- */
 async function startTestWithSettings(pageNumber, questionsCount) {
     ui.toggleLoader(true);
     const ayahs = await fetchPageData(pageNumber);
@@ -222,3 +227,4 @@ async function startTestWithSettings(pageNumber, questionsCount) {
 
 // --- 4. تشغيل التطبيق ---
 initialize();
+
