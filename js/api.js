@@ -73,6 +73,51 @@ export async function fetchActiveChallenges() {
     }
 }
 
+/**
+ * (الدالة الجديدة) يجلب البيانات الوصفية لكل سور القرآن (رقم السورة، الصفحات).
+ * @returns {Promise<object|null>} - كائن يحتوي على بيانات السور.
+ */
+export async function fetchQuranMetadata() {
+    const url = `${QURAN_API_BASE_URL}/meta`;
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('فشل جلب بيانات القرآن الوصفية.');
+        const data = await response.json();
+        if (data.code === 200) {
+            const surahs = data.data.surahs.references;
+            const pages = data.data.pages.references;
+            
+            const metadata = {};
+            surahs.forEach(surah => {
+                const startPage = pages.find(p => p.surah === surah.number && p.ayah === 1)?.page;
+                
+                const nextSurah = surahs.find(s => s.number === surah.number + 1);
+                let endPage;
+                if (nextSurah) {
+                    const nextSurahStartPage = pages.find(p => p.surah === nextSurah.number && p.ayah === 1)?.page;
+                    endPage = nextSurahStartPage - 1;
+                } else {
+                    endPage = 604;
+                }
+
+                if (startPage && endPage) {
+                    metadata[surah.number] = {
+                        name: surah.name,
+                        startPage: startPage,
+                        endPage: endPage
+                    };
+                }
+            });
+            return metadata;
+        }
+        return null;
+    } catch (error) {
+        console.error("Error fetching Quran metadata:", error);
+        alert("لا يمكن جلب بيانات السور الأساسية. قد لا تعمل بعض الميزات.");
+        return null;
+    }
+}
+
 export async function fetchPageData(pageNumber) {
     try {
         const [pageResponse, linesResponse] = await Promise.all([
