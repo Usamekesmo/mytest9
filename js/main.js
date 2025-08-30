@@ -1,6 +1,6 @@
 // =============================================================
 // ==      الملف الرئيسي (نقطة انطلاق التطبيق والغراء)        ==
-// ==      (محدث ليربط كل الميزات الجديدة معًا)               ==
+// ==      (النسخة النهائية الشاملة لكل التعديلات)            ==
 // =============================================================
 
 import * as ui from './ui.js';
@@ -173,7 +173,6 @@ async function startChallenge(challengeId) {
     });
 }
 
-// ▼▼▼ تم تعديل هذه الدالة بالكامل ▼▼▼
 async function startTestWithSettings(settings) {
     ui.toggleLoader(true);
     const pageAyahs = await fetchPageData(settings.pageNumber);
