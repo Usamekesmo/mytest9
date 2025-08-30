@@ -48,10 +48,10 @@ function setupEventListeners() {
 // --- 3. دوال التحكم الرئيسية ---
 
 /**
- * ▼▼▼ النسخة التشخيصية النهائية (مصححة من خطأ illegal return statement) ▼▼▼
+ * ▼▼▼ النسخة النهائية والمعدلة لحل مشكلة الصفحات المشتراة ▼▼▼
  */
 async function onStartButtonClick() {
-    console.clear(); // مسح الكونسول لبداية نظيفة
+    console.clear();
     console.log("========================================");
     console.log("===== بدء عملية التحقق من تقييد الصفحات =====");
     console.log("========================================");
@@ -59,7 +59,7 @@ async function onStartButtonClick() {
     const userName = ui.userNameInput.value.trim();
     if (!userName) {
         alert("يرجى إدخال اسمك للمتابعة.");
-        return; // هذا return قانوني لأنه داخل شرط
+        return;
     }
 
     // تحميل بيانات اللاعب أولاً
@@ -78,66 +78,59 @@ async function onStartButtonClick() {
     console.log("1. اسم المستخدم:", userName);
 
     const pageNumber = parseInt(ui.pageNumberInput.value, 10);
-    if (!pageNumber) {
-        console.log("يرجى إدخال رقم صفحة.");
-        return; // هذا return قانوني
+    if (!pageNumber || isNaN(pageNumber)) {
+        alert("يرجى إدخال رقم صفحة صحيح.");
+        return;
     }
     console.log("2. رقم الصفحة المدخل:", pageNumber);
 
-    // --- الجزء الأهم: فحص كائن القواعد بالتفصيل ---
+    // --- الجزء الأهم: فحص القواعد ودمج ممتلكات اللاعب ---
     const rules = progression.getGameRules();
     
     console.log("3. فحص كائن 'rules' الذي تم جلبه من progression.js:");
     if (!rules) {
         console.error("خطأ فادح: كائن 'rules' نفسه فارغ أو null. لن تعمل أي قيود.");
         alert("خطأ: لم يتم تحميل قواعد اللعبة.");
-        return; // هذا return قانوني
+        return;
     }
-    
-    // طباعة الكائن بالكامل لنرى كل خصائصه
     console.log("   -> محتوى الكائن 'rules':", JSON.parse(JSON.stringify(rules)));
 
-    // --- فحص خاصية 'allowedPages' بالتحديد ---
-    console.log("4. فحص خاصية 'allowedPages' (بحرف P كبير):");
-    const allowedPagesValue = rules.allowedPages; // الوصول إلى الخاصية بالاسم الصحيح
-    
-    if (allowedPagesValue === undefined) {
-        console.error("   -> النتيجة: الخاصية 'allowedPages' غير موجودة (undefined) في كائن القواعد. هل اسم العمود صحيح في Google Sheet؟");
-    } else {
-        console.log("   -> القيمة الأولية لـ 'allowedPages':", allowedPagesValue);
-        console.log("   -> نوع البيانات الأولي:", typeof allowedPagesValue);
-    }
+    console.log("4. بدء منطق التحقق من الصفحة...");
 
-    // --- الآن، نبدأ منطق التحقق الفعلي ---
-    console.log("5. بدء منطق التحقق من الصفحة...");
-    
-    // الشرط الذي يجب أن يعمل
-    if (allowedPagesValue && Array.isArray(allowedPagesValue) && allowedPagesValue.length > 0) {
-        
-        console.log("   -> الشرط تحقق: 'allowedPages' هي مصفوفة وغير فارغة.");
-        console.log("   -> محتوى المصفوفة:", allowedPagesValue);
-        
-        if (!allowedPagesValue.includes(pageNumber)) {
-            console.log(`   -> التحقق: الرقم ${pageNumber} غير موجود في المصفوفة. سيتم حظر الصفحة.`);
-            alert(`عفواً، الاختبار على الصفحة ${pageNumber} غير متاح حالياً. يرجى اختيار صفحة من الصفحات المسموح بها.`);
-            return; // هذا return قانوني
+    // 4.1. جلب الصفحات المسموح بها من القواعد العامة
+    const baseAllowedPages = (rules.allowedPages && Array.isArray(rules.allowedPages)) ? rules.allowedPages : [];
+    console.log("   -> الصفحات المسموحة من الخادم:", baseAllowedPages);
+
+    // 4.2. استخراج الصفحات التي يمتلكها اللاعب من ممتلكاته
+    const ownedPages = player.playerData.inventory
+        .filter(itemId => itemId.startsWith('page_')) // فلترة الممتلكات لتشمل الصفحات فقط
+        .map(itemId => parseInt(itemId.split('_')[1], 10)) // استخراج رقم الصفحة
+        .filter(num => !isNaN(num)); // التأكد من أن الناتج رقم صحيح
+    console.log("   -> الصفحات المملوكة للاعب:", ownedPages);
+
+    // 4.3. دمج القائمتين في قائمة نهائية واحدة بدون تكرار
+    const finalAllowedPages = [...new Set([...baseAllowedPages, ...ownedPages])];
+    console.log("   -> القائمة النهائية للصفحات المسموحة:", finalAllowedPages);
+
+    // 4.4. التحقق من الصفحة المدخلة مقابل القائمة النهائية
+    // يتم التحقق فقط إذا كانت هناك أي قيود على الإطلاق (إذا كانت المصفوفة النهائية تحتوي على عناصر)
+    if (finalAllowedPages.length > 0) {
+        if (!finalAllowedPages.includes(pageNumber)) {
+            console.log(`   -> التحقق: الرقم ${pageNumber} غير موجود في القائمة النهائية. سيتم حظر الصفحة.`);
+            const availablePagesMessage = `الصفحات المتاحة لك هي: ${finalAllowedPages.sort((a, b) => a - b).join(', ')}`;
+            alert(`عفواً، الاختبار على الصفحة ${pageNumber} غير متاح حالياً. ${availablePagesMessage}`);
+            return;
         } else {
-            console.log(`   -> التحقق: الرقم ${pageNumber} موجود في المصفوفة. سيتم السماح بالصفحة.`);
+            console.log(`   -> التحقق: الرقم ${pageNumber} موجود في القائمة النهائية. سيتم السماح بالصفحة.`);
         }
-
     } else {
-        console.warn("   -> الشرط فشل: تم تخطي كتلة التحقق. لهذا السبب يُسمح بكل الصفحات.");
-        console.warn("      - هل 'allowedPages' موجودة؟", allowedPagesValue !== undefined);
-        console.warn("      - هل هي مصفوفة؟", Array.isArray(allowedPagesValue));
-        if (Array.isArray(allowedPagesValue)) {
-            console.warn("      - هل هي فارغة؟", allowedPagesValue.length === 0);
-        }
+        console.warn("   -> لا توجد أي قيود على الصفحات. سيتم السماح بكل الصفحات.");
     }
 
-    console.log("6. نهاية عملية التحقق. إذا وصلت إلى هنا، فهذا يعني أنه تم السماح بالصفحة.");
+    console.log("5. نهاية عملية التحقق. إذا وصلت إلى هنا، فهذا يعني أنه تم السماح بالصفحة.");
     
     // إذا نجح كل شيء، ابدأ الاختبار
-    console.log("7. بدء الاختبار الفعلي...");
+    console.log("6. بدء الاختبار الفعلي...");
     startTestWithSettings({
         pageNumber: pageNumber,
         qari: ui.qariSelect.value,
