@@ -1,6 +1,6 @@
 // =============================================================
 // ==      وحدة إدارة ومنطق الاختبار (المايسترو)             ==
-// ==      (محدثة لتتكامل مع نظام الإنجازات)                  ==
+// ==      (النسخة النهائية الشاملة لكل الميزات)            ==
 // =============================================================
 
 import * as ui from './ui.js';
@@ -21,11 +21,10 @@ let state = {
     errorLog: [],
     userName: '',
     pageNumber: 0,
-    xpEarned: 0,
-    isChallenge: false
+    xpEarned: 0
 };
 
-let activeQuestionFunctions = [];
+let allActiveQuestions = [];
 const shuffleArray = array => [...array].sort(() => 0.5 - Math.random());
 
 export async function initializeQuiz() {
@@ -33,23 +32,19 @@ export async function initializeQuiz() {
     const config = await fetchQuestionsConfig();
     
     if (config && config.length > 0) {
-        activeQuestionFunctions = config
-            .map(q => allQuestionGenerators[q.id])
-            .filter(f => typeof f === 'function');
-        console.log(`تم تفعيل ${activeQuestionFunctions.length} نوع من الأسئلة.`);
-    } else {
-        console.warn("فشل جلب إعدادات الأسئلة، سيتم استخدام كل الأسئلة المتاحة محلياً.");
-        activeQuestionFunctions = Object.values(allQuestionGenerators);
-    }
+        allActiveQuestions = config.map(q => ({
+            ...q,
+            generator: allQuestionGenerators[q.id]
+        })).filter(q => typeof q.generator === 'function');
 
-    if (activeQuestionFunctions.length === 0) {
-        alert("خطأ فادح: لا توجد أي أسئلة مفعّلة! يرجى مراجعة لوحة التحكم.");
+        console.log(`تم تحميل ${allActiveQuestions.length} نوع من الأسئلة النشطة من لوحة التحكم.`);
+    } else {
+        console.error("فشل فادح: لم يتم جلب أي إعدادات للأسئلة!");
+        alert("خطأ: لا توجد أي أسئلة مفعّلة! يرجى مراجعة لوحة التحكم.");
     }
 }
 
-// ▼▼▼ تم تعديل هذه الدالة ▼▼▼
 export function start(settings) {
-    // إعادة تعيين الحالة مع الإعدادات الجديدة، بما في ذلك pageAyahs
     state = {
         ...state,
         ...settings,
@@ -73,13 +68,19 @@ function displayNextQuestion() {
     ui.updateProgress(state.currentQuestionIndex, state.totalQuestions);
     ui.feedbackArea.classList.add('hidden');
 
-    if (activeQuestionFunctions.length === 0) {
-        alert("لا يمكن عرض السؤال لعدم وجود أسئلة مفعّلة.");
+    const playerLevel = progression.getLevelInfo(player.playerData.xp).level;
+    const availableQuestions = allActiveQuestions.filter(q => playerLevel >= q.levelRequired);
+
+    if (availableQuestions.length === 0) {
+        alert("عفواً، لا توجد أسئلة متاحة لمستواك الحالي. استمر في اللعب لفتح المزيد!");
+        console.error("لا توجد أسئلة متاحة لمستوى اللاعب:", playerLevel);
+        ui.showScreen(ui.startScreen);
         return;
     }
+
+    const randomQuestionData = shuffleArray(availableQuestions)[0];
+    const randomGenerator = randomQuestionData.generator;
     
-    const randomGenerator = shuffleArray(activeQuestionFunctions)[0];
-    // الآن نمرر state.pageAyahs التي تم تعيينها في دالة start
     const question = randomGenerator(state.pageAyahs, state.selectedQari, handleResult);
 
     if (question) {
@@ -87,7 +88,6 @@ function displayNextQuestion() {
         question.setupListeners(ui.questionArea);
     } else {
         console.warn(`فشل مولد الأسئلة ${randomGenerator.name} في إنشاء سؤال. يتم المحاولة مرة أخرى.`);
-        // استدعاء ذاتي آمن لأننا تأكدنا من أن pageAyahs ليست فارغة في main.js
         displayNextQuestion();
     }
 }
@@ -116,22 +116,16 @@ async function endQuiz() {
     ui.updateProgress(state.totalQuestions, state.totalQuestions, true);
     const rules = progression.getGameRules();
 
+    // زيادة عدادات اللاعب
     player.playerData.totalQuizzesCompleted++;
+    player.playerData.dailyQuizzes.count++;
 
-    achievements.checkAchievements('quiz_completed', {
-        score: state.score,
-        totalQuestions: state.totalQuestions,
-        isChallenge: state.isChallenge,
-        pageNumber: state.pageNumber
-    });
-
+    // حساب المكافآت
     if (state.score === state.totalQuestions) {
         state.xpEarned += rules.xpBonusAllCorrect || 0;
         player.playerData.diamonds += rules.diamondsBonusAllCorrect || 0;
         console.log("مكافأة الأداء المثالي: تم إضافة نقاط وألماس.");
     }
-
-    player.playerData.dailyQuizzes.count++;
     if (player.playerData.dailyQuizzes.count === rules.dailyQuizzesGoal) {
         state.xpEarned += rules.dailyQuizzesBonusXp || 0;
         console.log("مكافأة الهدف اليومي: تم إضافة نقاط خبرة إضافية.");
@@ -144,6 +138,15 @@ async function endQuiz() {
     if (levelUpInfo) {
         player.playerData.diamonds += levelUpInfo.reward;
     }
+
+    // التحقق من الإنجازات بعد اكتمال كل الحسابات
+    achievements.checkAchievements('quiz_completed', {
+        score: state.score,
+        totalQuestions: state.totalQuestions,
+        errors: state.errorLog.length,
+        isPerfect: state.score === state.totalQuestions,
+        pageNumber: state.pageNumber
+    });
 
     if (state.errorLog.length > 0) {
         ui.displayErrorReview(state.errorLog);
