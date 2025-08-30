@@ -1,6 +1,6 @@
 // =============================================================
 // ==      الملف الرئيسي (نقطة انطلاق التطبيق والغراء)        ==
-// ==      (النسخة النهائية الشاملة لكل الميزات)            ==
+// ==      (النسخة النهائية المستقرة قبل إضافة السمات)       ==
 // =============================================================
 
 import * as ui from './ui.js';
@@ -12,45 +12,11 @@ import * as store from './store.js';
 import * as achievements from './achievements.js';
 import { surahMetadata } from './quran-metadata.js';
 
-// --- المتغيرات العامة ---
 let activeChallenges = [];
-const themeToggleButton = document.getElementById('themeToggleButton');
-
-// --- دوال نظام السمات (Themes) ---
-/**
- * يقوم بتبديل السمة بين الفاتح والداكن وحفظ الاختيار.
- */
-function toggleTheme() {
-    const body = document.body;
-    body.classList.toggle('theme-dark');
-
-    if (body.classList.contains('theme-dark')) {
-        themeToggleButton.textContent = '☀️';
-        localStorage.setItem('theme', 'dark');
-    } else {
-        themeToggleButton.textContent = '🌙';
-        localStorage.setItem('theme', 'light');
-    }
-}
-
-/**
- * يقوم بتطبيق السمة المحفوظة عند بدء تشغيل التطبيق.
- */
-function applySavedTheme() {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-        document.body.classList.add('theme-dark');
-        themeToggleButton.textContent = '☀️';
-    } else {
-        themeToggleButton.textContent = '🌙';
-    }
-}
-
 
 // --- 1. دالة التهيئة الرئيسية ---
 async function initialize() {
     console.log("التطبيق قيد التشغيل...");
-    applySavedTheme(); // تطبيق السمة المحفوظة أولاً
     ui.toggleLoader(true);
     ui.initializeLockedOptions();
     
@@ -89,8 +55,6 @@ function setupEventListeners() {
         const levelUpInfo = progression.checkForLevelUp(oldXp, player.playerData.xp);
         ui.displayFinalResult(quizState, levelUpInfo);
     });
-
-    themeToggleButton.addEventListener('click', toggleTheme);
 }
 
 // --- 3. دوال التحكم الرئيسية ---
