@@ -70,7 +70,7 @@ hr {
     margin-top: 20px;
     padding: 15px;
     position: relative;
-    min-height: 200px; /* يمنع القفز في الواجهة */
+    min-height: 200px;
 }
 
 audio {
@@ -187,7 +187,7 @@ audio {
     font-weight: bold;
 }
 
-/* ======================= أنماط المتجر ======================= */
+/* ======================= أنماط المتجر والتحديات ======================= */
 .main-buttons {
     display: flex;
     justify-content: center;
@@ -196,7 +196,7 @@ audio {
 }
 
 .secondary-button {
-    background-color: #607d8b; /* لون مختلف للزر الثانوي */
+    background-color: #607d8b;
 }
 .secondary-button:hover {
     background-color: #455a64;
@@ -244,7 +244,7 @@ audio {
 .store-item p {
     font-size: 0.9em;
     color: #555;
-    flex-grow: 1; /* يجعل الوصف يملأ المساحة المتاحة */
+    flex-grow: 1;
 }
 
 .item-price {
@@ -276,57 +276,8 @@ audio {
     cursor: default;
 }
 
-/* ======================= أنماط السمات (Themes) ======================= */
-
-/* --- السمة الداكنة (Dark Mode) --- */
-body.theme-dark {
-    background-color: #121212;
-    color: #e0e0e0;
-}
-.theme-dark .container {
-    background-color: #1e1e1e;
-    box-shadow: 0 4px 12px rgba(255,255,255,0.1);
-}
-.theme-dark h1, .theme-dark h2, .theme-dark h3 {
-    color: #00e676; /* لون أخضر ساطع */
-}
-.theme-dark .option-div:hover, .theme-dark .choice-box:hover {
-    background-color: #333;
-}
-.theme-dark .store-item {
-    background-color: #2a2a2a;
-    border-color: #444;
-}
-.theme-dark .store-item h4 {
-    color: #69f0ae;
-}
-.theme-dark .store-item p {
-    color: #bdbdbd;
-}
-
-/* --- السمة الخضراء (Green Mode) --- */
-body.theme-green {
-    background-color: #e8f5e9; /* أخضر فاتح جداً */
-}
-.theme-green .container {
-    background-color: #ffffff;
-}
-.theme-green h1, .theme-green h2, .theme-green h3 {
-    color: #2e7d32; /* أخضر داكن */
-}
-.theme-green button {
-    background-color: #43a047;
-}
-.theme-green button:hover {
-    background-color: #2e7d32;
-}
-.theme-green .highlighted {
-    background-color: #43a047 !important;
-}
-
-/* ======================= إضافة: أنماط التحديات ======================= */
 #challenges-container {
-    background-color: #e0f2f1; /* لون خلفية مميز */
+    background-color: #e0f2f1;
     border: 2px solid #00796b;
     border-radius: 8px;
     padding: 15px;
@@ -346,121 +297,90 @@ body.theme-green {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap; /* للسماح بالالتفاف على الشاشات الصغيرة */
+    flex-wrap: wrap;
     gap: 10px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     text-align: right;
 }
 
-.challenge-item h4 {
-    margin: 0;
-    font-size: 1.1em;
-    color: #333;
-    flex-grow: 1; /* لجعل العنوان يأخذ المساحة المتاحة */
+.challenge-item h4 { margin: 0; font-size: 1.1em; color: #333; flex-grow: 1; }
+.challenge-item p { margin: 0; font-size: 0.9em; color: #555; }
+.challenge-item button { padding: 8px 15px; font-size: 14px; background-color: #ff9800; flex-shrink: 0; }
+.challenge-item button:hover { background-color: #f57c00; }
+
+/* ======================= أنماط لوحة الصدارة (جديدة) ======================= */
+#leaderboard-list {
+    list-style: none;
+    padding: 0;
+    text-align: right;
 }
 
-.challenge-item p {
-    margin: 0;
-    font-size: 0.9em;
-    color: #555;
+.leaderboard-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
 }
 
-.challenge-item button {
-    padding: 8px 15px;
-    font-size: 14px;
-    background-color: #ff9800; /* لون مميز لزر التحدي */
-    flex-shrink: 0; /* لمنع الزر من الانكماش */
+.leaderboard-item:nth-child(1) { background-color: #ffd700; border-color: #ffc107; font-weight: bold; }
+.leaderboard-item:nth-child(2) { background-color: #e9ecef; border-color: #ced4da; }
+.leaderboard-item:nth-child(3) { background-color: #f0e68c; border-color: #e9d66b; }
+
+.leaderboard-rank {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #004d40;
+    min-width: 30px;
 }
 
-.challenge-item button:hover {
-    background-color: #f57c00;
+.leaderboard-name {
+    flex-grow: 1;
+    margin-right: 15px;
 }
 
-/* تعديل للسمة الداكنة */
-.theme-dark #challenges-container {
-    background-color: #2a2a2a;
-    border-color: #00e676;
-}
-.theme-dark #challenges-container h3 {
-    color: #69f0ae;
-}
-.theme-dark .challenge-item {
-    background-color: #333;
-    box-shadow: none;
-}
-.theme-dark .challenge-item h4 {
-    color: #e0e0e0;
-}
-.theme-dark .challenge-item p {
-    color: #bdbdbd;
+.leaderboard-xp {
+    font-weight: bold;
+    color: #00796b;
 }
 
-/* ▼▼▼ تم التعديل: إضافة أنماط الإنجازات ولوحة الصدارة ▼▼▼ */
-
-/* ======================= أنماط الإنجازات ======================= */
-.achievement-alert {
+/* ======================= أنماط إشعار الإنجاز (جديدة) ======================= */
+.achievement-toast {
     position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #004d40;
-    color: #ffffff;
-    padding: 20px;
-    border-radius: 10px;
+    bottom: 20px;
+    left: 20px;
+    background-color: #212529;
+    color: #fff;
+    padding: 15px 20px;
+    border-radius: 8px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     z-index: 1000;
-    text-align: center;
-    width: 90%;
-    max-width: 350px;
-    border: 2px solid #69f0ae;
-    opacity: 1;
-    transition: opacity 0.5s ease-in-out, top 0.5s ease-in-out;
+    width: 300px;
+    text-align: right;
+    border-right: 5px solid #ffd700;
+    transform: translateX(-120%);
+    transition: transform 0.5s ease-in-out;
 }
 
-.achievement-alert h4 {
-    margin: 0 0 10px 0;
-    color: #69f0ae;
+.achievement-toast.show {
+    transform: translateX(0);
+}
+
+.achievement-toast h4 {
+    margin: 0 0 5px 0;
+    color: #ffd700;
     font-family: 'Amiri', serif;
 }
 
-.achievement-alert p {
-    margin: 5px 0;
+.achievement-toast p {
+    margin: 0 0 5px 0;
+    font-size: 1em;
 }
 
-.achievement-alert small {
-    font-weight: bold;
-    color: #b2dfdb;
-}
-
-/* ======================= أنماط لوحة الصدارة ======================= */
-.leaderboard-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-    font-size: 1.1em;
-}
-
-.leaderboard-table th, .leaderboard-table td {
-    padding: 12px 15px;
-    text-align: center;
-    border-bottom: 1px solid #ddd;
-}
-
-.leaderboard-table thead th {
-    background-color: #e0f2f1;
-    color: #004d40;
-    font-family: 'Amiri', serif;
-}
-
-.leaderboard-table tbody tr:nth-child(even) {
-    background-color: #f8fdfd;
-}
-
-.leaderboard-table tbody tr:hover {
-    background-color: #e0f2f1;
-}
-
-.leaderboard-table td:first-child {
-    font-weight: bold;
-    font-size: 1.2em;
+.achievement-toast small {
+    font-size: 0.8em;
+    opacity: 0.8;
 }
