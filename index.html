@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الاختبار التعليمي المتقدم للحفظ</title>
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- ======================= شاشة البداية وتسجيل الدخول ======================= -->
+    <div id="start-screen" class="container">
+        <h1>الاختبار التعليمي المتقدم للحفظ</h1>
+        <p>أدخل اسمك لبدء رحلتك في تثبيت الحفظ أو لمتابعة تقدمك.</p>
+        
+        <input type="text" id="userName" placeholder="أدخل اسمك هنا">
+        
+        <div id="player-info" class="hidden"></div>
+
+        <hr>
+        
+        <div id="challenges-container" class="hidden">
+            <h3>تحديات متاحة</h3>
+            <div id="challenges-list"></div>
+            <hr>
+        </div>
+
+        <p>اختر القارئ، وحدد الصفحة لبدء الاختبار.</p>
+        <input type="number" id="pageNumber" placeholder="أدخل رقم الصفحة المتاحة">
+        
+        <select id="qariSelect">
+            <option value="ar.alafasy" selected>مشاري العفاسي</option>
+            <option value="ar.abdulbasitmurattal">عبد الباسط (مرتل)</option>
+            <option value="ar.minshawi">محمد صديق المنشاوي</option>
+            <option value="ar.husary" data-locked="true">محمود خليل الحصري (مقفل)</option>
+        </select>
+        
+        <select id="questionsCount" class="hidden">
+            <option value="5">5 أسئلة</option>
+        </select>
+
+        <div class="main-buttons">
+            <button id="startButton">تسجيل الدخول / بدء الاختبار</button>
+            <button id="storeButton" class="secondary-button">المتجر</button>
+        </div>
+        
+        <div id="loader" class="loader hidden"></div>
+    </div>
+
+    <!-- ======================= شاشة الاختبار ======================= -->
+    <div id="quiz-screen" class="container hidden">
+        <div id="progress-counter"></div>
+        <div id="progress-container"><div id="progress-bar"></div></div>
+        <hr>
+        <div id="question-area"></div>
+        <div id="feedback-area" class="hidden"></div>
+    </div>
+
+    <!-- ======================= شاشة مراجعة الأخطاء ======================= -->
+    <div id="error-review-screen" class="container hidden">
+        <h2>مراجعة الأخطاء</h2>
+        <p>هذه هي الأسئلة التي أخطأت فيها. راجعها جيداً لتثبيت الحفظ.</p>
+        <div id="error-list"></div>
+        <!-- 
+            ▼▼▼ هذا هو الزر الذي كان مفقوداً ▼▼▼ 
+        -->
+        <button id="show-final-result-button">عرض النتيجة النهائية</button>
+    </div>
+
+    <!-- ======================= شاشة النتيجة النهائية ======================= -->
+    <div id="result-screen" class="container hidden">
+        <h2>النتيجة النهائية</h2>
+        <p>أحسنت يا <span id="resultName"></span>!</p>
+        <p>نتيجتك هي: <span id="finalScore"></span></p>
+        <p>لقد كسبت: <span id="xpGained"></span> نقطة خبرة.</p>
+        <p id="level-up-message" class="hidden" style="color: #004d40; font-weight: bold;"></p>
+        <p id="save-status" style="font-size: 0.9em; color: #555;">جاري حفظ تقدمك...</p>
+        <button id="reloadButton">إجراء اختبار جديد</button>
+    </div>
+
+    <!-- ======================= شاشة المتجر ======================= -->
+    <div id="store-screen" class="container hidden">
+        <div class="store-header">
+            <h2>المتجر</h2>
+            <div id="player-diamonds-display" class="diamonds-counter"></div>
+        </div>
+        <p>استخدم الألماس الذي كسبته لشراء عناصر مميزة!</p>
+        <hr>
+        <div id="store-items-container"></div>
+        <button id="closeStoreButton">العودة إلى القائمة</button>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
