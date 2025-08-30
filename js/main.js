@@ -17,6 +17,8 @@ let activeChallenges = [];
 // --- 1. دالة التهيئة الرئيسية ---
 async function initialize() {
     console.log("التطبيق قيد التشغيل...");
+    applySavedTheme(); //  <-- إضافة هذا السطر هنا في البداية
+    ui.toggleLoader(true);
     ui.toggleLoader(true);
     ui.initializeLockedOptions();
     
@@ -55,7 +57,9 @@ function setupEventListeners() {
         const oldXp = player.playerData.xp - quizState.xpEarned;
         const levelUpInfo = progression.checkForLevelUp(oldXp, player.playerData.xp);
         ui.displayFinalResult(quizState, levelUpInfo);
+         
     });
+    themeToggleButton.addEventListener('click', toggleTheme);
 }
 
 // --- 3. دوال التحكم الرئيسية ---
@@ -159,8 +163,40 @@ async function startTestWithSettings(settings) {
     } else {
         alert(`تعذر تحميل بيانات الصفحة ${settings.pageNumber}. قد تكون الصفحة غير موجودة أو هناك مشكلة في الشبكة.`);
     }
+    /**
+ * يقوم بتبديل السمة بين الفاتح والداكن وحفظ الاختيار.
+ */
+function toggleTheme() {
+    const body = document.body;
+    body.classList.toggle('theme-dark');
+
+    // تحديث نص الزر ليعكس الحالة الجديدة
+    if (body.classList.contains('theme-dark')) {
+        themeToggleButton.textContent = '☀️';
+        localStorage.setItem('theme', 'dark'); // حفظ الاختيار
+    } else {
+        themeToggleButton.textContent = '🌙';
+        localStorage.setItem('theme', 'light'); // حفظ الاختيار
+    }
+}
+
+/**
+ * يقوم بتطبيق السمة المحفوظة عند بدء تشغيل التطبيق.
+ */
+function applySavedTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        document.body.classList.add('theme-dark');
+        themeToggleButton.textContent = '☀️';
+    } else {
+        // الوضع الفاتح هو الافتراضي، لا حاجة لإضافة فئة
+        themeToggleButton.textContent = '🌙';
+    }
+}
+
 }
 
 // --- 4. تشغيل التطبيق ---
 initialize();
+
 
