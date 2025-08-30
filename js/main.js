@@ -11,7 +11,7 @@ import * as progression from './progression.js';
 import * as store from './store.js';
 import * as achievements from './achievements.js';
 import { surahMetadata } from './quran-metadata.js';
-
+const themeToggleButton = document.getElementById('themeToggleButton'); 
 let activeChallenges = [];
 
 // --- 1. دالة التهيئة الرئيسية ---
@@ -163,3 +163,4 @@ async function startTestWithSettings(settings) {
 
 // --- 4. تشغيل التطبيق ---
 initialize();
+
