@@ -1,6 +1,6 @@
 // =============================================================
 // ==      وحدة واجهة المستخدم (كل ما يراه المستخدم)         ==
-// ==      (محدثة لتشمل كل الميزات الجديدة)                  ==
+// ==      (النسخة النهائية الشاملة لكل الميزات)            ==
 // =============================================================
 
 // --- 1. استيراد العناصر من DOM وتصديرها ---
@@ -9,20 +9,20 @@ export const quizScreen = document.getElementById('quiz-screen');
 export const errorReviewScreen = document.getElementById('error-review-screen');
 export const resultScreen = document.getElementById('result-screen');
 export const storeScreen = document.getElementById('store-screen');
-export const leaderboardScreen = document.getElementById('leaderboard-screen'); // جديد
+export const leaderboardScreen = document.getElementById('leaderboard-screen');
 
 export const userNameInput = document.getElementById('userName');
-export const pageSelect = document.getElementById('pageSelect'); // تعديل
+export const pageSelect = document.getElementById('pageSelect');
 export const qariSelect = document.getElementById('qariSelect');
 export const questionsCountSelect = document.getElementById('questionsCount');
 
 export const startButton = document.getElementById('startButton');
 export const storeButton = document.getElementById('storeButton');
+export const leaderboardButton = document.getElementById('leaderboardButton');
 export const reloadButton = document.getElementById('reloadButton');
 export const closeStoreButton = document.getElementById('closeStoreButton');
+export const closeLeaderboardButton = document.getElementById('closeLeaderboardButton');
 export const showFinalResultButton = document.getElementById('show-final-result-button');
-export const leaderboardButton = document.getElementById('leaderboardButton'); // جديد
-export const closeLeaderboardButton = document.getElementById('closeLeaderboardButton'); // جديد
 
 export const playerInfoDiv = document.getElementById('player-info');
 export const loader = document.getElementById('loader');
@@ -46,7 +46,10 @@ export const storeItemsContainer = document.getElementById('store-items-containe
 export const challengesContainer = document.getElementById('challenges-container');
 export const challengesList = document.getElementById('challenges-list');
 
-export const leaderboardContainer = document.getElementById('leaderboard-container'); // جديد
+export const leaderboardList = document.getElementById('leaderboard-list');
+export const achievementToast = document.getElementById('achievement-toast');
+export const achievementToastName = document.getElementById('achievement-toast-name');
+export const achievementToastReward = document.getElementById('achievement-toast-reward');
 
 
 // --- 2. دوال التحكم العامة في الواجهة ---
@@ -61,9 +64,7 @@ export function toggleLoader(show) {
 }
 
 export function initializeLockedOptions() {
-    const lockedOptions = qariSelect.querySelectorAll('option[data-locked="true"]');
-    
-    lockedOptions.forEach(option => {
+    qariSelect.querySelectorAll('option[data-locked="true"]').forEach(option => {
         option.disabled = true;
         option.style.color = '#999';
     });
@@ -81,9 +82,38 @@ export function updatePlayerDisplay(playerData, levelInfo) {
     playerInfoDiv.classList.remove('hidden');
 }
 
-export function applyGameRules(rules) {
-    if (rules.questionsPerQuiz) {
-        questionsCountSelect.value = rules.questionsPerQuiz;
+export function populatePageSelect(allowedPages, purchasedPages) {
+    pageSelect.innerHTML = '<option value="">-- اختر صفحة --</option>'; // إعادة تعيين
+    
+    const allAvailablePages = [...new Set([...allowedPages, ...purchasedPages])].sort((a, b) => a - b);
+
+    if (allAvailablePages.length === 0) {
+        pageSelect.innerHTML = '<option value="">لا توجد صفحات متاحة حاليًا</option>';
+        return;
+    }
+
+    allAvailablePages.forEach(page => {
+        const option = document.createElement('option');
+        option.value = page;
+        option.textContent = `الصفحة ${page}`;
+        if (purchasedPages.includes(page) && !allowedPages.includes(page)) {
+            option.textContent += " (تم شراؤها)";
+        }
+        pageSelect.appendChild(option);
+    });
+}
+
+export function updateQuestionsCountOptions(maxQuestions) {
+    questionsCountSelect.innerHTML = '';
+    for (let i = 5; i <= maxQuestions; i += 5) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = `${i} ${i === 5 ? 'أسئلة' : 'سؤالاً'}`;
+        questionsCountSelect.appendChild(option);
+    }
+    // تحديد الخيار الأخير كافتراضي
+    if (questionsCountSelect.options.length > 0) {
+        questionsCountSelect.value = questionsCountSelect.options[questionsCountSelect.options.length - 1].value;
     }
 }
 
@@ -165,19 +195,41 @@ export function updateSaveMessage(isSaved) {
 // --- 5. دوال واجهة المتجر والتحديات والميزات الجديدة ---
 
 export function displayStore(storeItems, playerData, purchaseCallback) {
-    playerDiamondsDisplay.innerHTML = `${playerData.diamonds} 💎`;
+    playerDiamondsDisplay.innerHTML = `${playerData.diamonds} 💎 | ${playerData.xp} XP`;
     storeItemsContainer.innerHTML = '';
 
     storeItems.forEach(item => {
         const isOwned = playerData.inventory.includes(item.id);
         const itemDiv = document.createElement('div');
         itemDiv.className = `store-item ${isOwned ? 'owned-item' : ''}`;
+        
+        let priceDisplay = '';
+        let buttonText = 'شراء';
+        let isDisabled = isOwned;
+
+        if (item.type === 'xp_exchange') {
+            priceDisplay = `التكلفة: ${item.price} XP`;
+            buttonText = 'استبدال';
+            if (playerData.xp < item.price) {
+                isDisabled = true;
+            }
+        } else {
+            priceDisplay = `السعر: ${item.price} 💎`;
+            if (playerData.diamonds < item.price) {
+                isDisabled = true;
+            }
+        }
+
+        if (isOwned) {
+            buttonText = 'تم الشراء';
+        }
+
         itemDiv.innerHTML = `
             <h4>${item.name}</h4>
             <p>${item.description}</p>
-            <p class="item-price">السعر: ${item.price} 💎</p>
-            <button class="buy-button" data-item-id="${item.id}" ${isOwned ? 'disabled' : ''}>
-                ${isOwned ? 'تم الشراء' : 'شراء'}
+            <p class="item-price">${priceDisplay}</p>
+            <button class="buy-button" data-item-id="${item.id}" ${isDisabled ? 'disabled' : ''}>
+                ${buttonText}
             </button>
         `;
         
@@ -213,120 +265,34 @@ export function displayChallenges(challenges, startChallengeCallback) {
     challengesContainer.classList.remove('hidden');
 }
 
-// ▼▼▼ الدوال الجديدة التي تمت إضافتها ▼▼▼
-
-/**
- * يقوم بملء القائمة المنسدلة بالصفحات المتاحة للاعب.
- * @param {Array<number>} pages - مصفوفة من أرقام الصفحات المسموح بها.
- */
-export function populateAvailablePages(pages) {
-    pageSelect.innerHTML = '';
-
-    if (!pages || pages.length === 0) {
-        const option = document.createElement('option');
-        option.textContent = "لا توجد صفحات متاحة حاليًا";
-        option.disabled = true;
-        pageSelect.appendChild(option);
-        pageSelect.style.display = 'none';
-    } else {
-        pageSelect.style.display = 'block';
-        
-        const defaultOption = document.createElement('option');
-        defaultOption.value = "";
-        defaultOption.textContent = "اختر صفحة لبدء الاختبار...";
-        defaultOption.disabled = true;
-        defaultOption.selected = true;
-        pageSelect.appendChild(defaultOption);
-
-        pages.sort((a, b) => a - b).forEach(pageNumber => {
-            const option = document.createElement('option');
-            option.value = pageNumber;
-            option.textContent = `صفحة ${pageNumber}`;
-            pageSelect.appendChild(option);
-        });
-    }
-}
-
-/**
- * يقوم بتفعيل خيار قارئ معين في القائمة المنسدلة.
- * @param {string} qariValue - قيمة الخيار المراد تفعيله (e.g., 'ar.husary').
- */
-export function unlockQari(qariValue) {
-    const qariOption = qariSelect.querySelector(`option[value="${qariValue}"]`);
-
-    if (qariOption) {
-        qariOption.disabled = false;
-        qariOption.removeAttribute('data-locked');
-        qariOption.style.color = '';
-        qariOption.textContent = qariOption.textContent.replace('(مقفل)', '').trim();
-        console.log(`تم تفعيل القارئ: ${qariValue}`);
-    }
-}
-
-/**
- * تعرض تنبيهًا عند تحقيق إنجاز جديد.
- * @param {object} achievement - كائن الإنجاز الذي تم تحقيقه.
- */
-export function showAchievementAlert(achievement) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = 'achievement-alert';
-    alertDiv.innerHTML = `
-        <h4>🏆 إنجاز جديد! 🏆</h4>
-        <p><strong>${achievement.name}</strong></p>
-        <p>${achievement.description}</p>
-        <small>+${achievement.xpReward} خبرة, +${achievement.diamondsReward} 💎</small>
-    `;
-
-    document.body.appendChild(alertDiv);
-
-    setTimeout(() => {
-        alertDiv.style.opacity = '0';
-        alertDiv.style.top = '0px';
-        setTimeout(() => {
-            alertDiv.remove();
-        }, 500);
-    }, 5000);
-}
-
-/**
- * يعرض بيانات لوحة الصدارة في جدول.
- * @param {Array<object>} players - مصفوفة اللاعبين (name, xp).
- */
-export function displayLeaderboard(players) {
-    if (!players || players.length === 0) {
-        leaderboardContainer.innerHTML = '<p>لا توجد بيانات لعرضها حاليًا.</p>';
+export function displayLeaderboard(leaderboardData) {
+    leaderboardList.innerHTML = '';
+    if (!leaderboardData || leaderboardData.length === 0) {
+        leaderboardList.innerHTML = '<p>لا توجد بيانات لعرضها حاليًا.</p>';
         return;
     }
 
-    let tableHTML = `
-        <table class="leaderboard-table">
-            <thead>
-                <tr>
-                    <th>الترتيب</th>
-                    <th>اللاعب</th>
-                    <th>نقاط الخبرة (XP)</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-
-    players.forEach((player, index) => {
-        const rank = index + 1;
-        let rankDisplay;
-        if (rank === 1) rankDisplay = '🥇';
-        else if (rank === 2) rankDisplay = '🥈';
-        else if (rank === 3) rankDisplay = '🥉';
-        else rankDisplay = rank;
-
-        tableHTML += `
-            <tr>
-                <td>${rankDisplay}</td>
-                <td>${player.name}</td>
-                <td>${player.xp}</td>
-            </tr>
+    leaderboardData.forEach((player, index) => {
+        const item = document.createElement('div');
+        item.className = 'leaderboard-item';
+        item.innerHTML = `
+            <span class="leaderboard-rank">${index + 1}</span>
+            <span class="leaderboard-name">${player.name}</span>
+            <span class="leaderboard-xp">${player.xp} XP</span>
         `;
+        leaderboardList.appendChild(item);
     });
+}
 
-    tableHTML += '</tbody></table>';
-    leaderboardContainer.innerHTML = tableHTML;
+export function showAchievementToast(achievement) {
+    achievementToastName.textContent = achievement.name;
+    achievementToastReward.textContent = `+${achievement.xpReward} XP, +${achievement.diamondsReward} 💎`;
+    
+    achievementToast.classList.remove('hidden');
+    achievementToast.classList.add('show');
+
+    setTimeout(() => {
+        achievementToast.classList.remove('show');
+        // يمكن إضافة 'hidden' بعد انتهاء حركة الخروج إذا لزم الأمر
+    }, 4000);
 }
