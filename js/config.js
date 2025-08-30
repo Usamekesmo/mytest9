@@ -4,9 +4,9 @@
 
 /**
  * رابط الويب المنشور لـ Google Apps Script.
- * !!! هام جداً: يجب استبدال هذا الرابط بالرابط الخاص بك.
+ * !!! هام جداً: يجب استبدال هذا الرابط بالرابط الخاص بك عند النشر.
  */
-export const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwnHqWBzC1lG83ICX7M3XqxSLnHFoNzW2aN4aborE3bkBNEmv4JI0QU2B1Upo5B3sDzgA/exec";
+export const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwnHqWBzC1lG83ICX7M3XqxSLnHFoNzW2aN4aborE3bkBNEmv4JI0QU2B1Upo5B3sDzgA/exec"; // <--- استبدل هذا بالرابط الخاص بك
 
 /**
  * الرابط الأساسي لواجهة برمجة تطبيقات القرآن الكريم.
