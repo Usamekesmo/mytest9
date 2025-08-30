@@ -12,6 +12,7 @@ import * as store from './store.js';
 import * as achievements from './achievements.js';
 import { surahMetadata } from './quran-metadata.js';
 
+// --- المتغيرات العامة ---
 let activeChallenges = [];
 const themeToggleButton = document.getElementById('themeToggleButton');
 
@@ -49,7 +50,7 @@ function applySavedTheme() {
 // --- 1. دالة التهيئة الرئيسية ---
 async function initialize() {
     console.log("التطبيق قيد التشغيل...");
-    applySavedTheme();
+    applySavedTheme(); // تطبيق السمة المحفوظة أولاً
     ui.toggleLoader(true);
     ui.initializeLockedOptions();
     
@@ -140,8 +141,7 @@ async function onStartButtonClick() {
 }
 
 function onStoreButtonClick() {
-    // التأكد من أن اللاعب قد سجل دخوله
-    if (!player.playerData.name) { // <-- هذا هو الشرط الصحيح
+    if (!player.playerData.name) {
         alert("يرجى تسجيل الدخول أولاً لزيارة المتجر.");
         return;
     }
@@ -149,8 +149,7 @@ function onStoreButtonClick() {
 }
 
 async function onLeaderboardButtonClick() {
-    // التأكد من أن اللاعب قد سجل دخوله
-    if (!player.playerData.name) { // <-- هذا هو الشرط الصحيح
+    if (!player.playerData.name) {
         alert("يرجى تسجيل الدخول أولاً لعرض لوحة الصدارة.");
         return;
     }
@@ -164,6 +163,7 @@ async function onLeaderboardButtonClick() {
         alert("تعذر تحميل لوحة الصدارة. يرجى المحاولة مرة أخرى.");
     }
 }
+
 async function startChallenge(challengeId) {
     const userName = ui.userNameInput.value.trim();
     if (!userName) {
@@ -204,19 +204,18 @@ async function startChallenge(challengeId) {
 
     const qari = ui.qariSelect.value;
     const questionsCount = parseInt(challenge.questionsCount, 10);
-    if (!questionsCount || isNaN(questionsCount)) {
+    if (!isNaN(questionsCount)) {
+        console.log(`بدء التحدي: ${challenge.challengeName}. تم تحديد الصفحة: ${pageNumber}.`);
+        startTestWithSettings({
+            pageNumber,
+            qari,
+            questionsCount,
+            userName,
+            isChallenge: true
+        });
+    } else {
         alert(`عفواً، هناك خطأ في إعدادات التحدي (عدد الأسئلة غير صالح).`);
-        return;
     }
-
-    console.log(`بدء التحدي: ${challenge.challengeName}. تم تحديد الصفحة: ${pageNumber}.`);
-    startTestWithSettings({
-        pageNumber,
-        qari,
-        questionsCount,
-        userName,
-        isChallenge: true
-    });
 }
 
 async function startTestWithSettings(settings) {
@@ -242,4 +241,3 @@ async function startTestWithSettings(settings) {
 
 // --- 4. تشغيل التطبيق ---
 initialize();
-
