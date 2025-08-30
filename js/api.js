@@ -1,11 +1,34 @@
 // =============================================================
 // ==   وحدة الاتصالات الخارجية (API - Application Programming Interface)   ==
-// ==   (محدثة لتشمل دوال الإنجازات ولوحة الصدارة)             ==
+// ==   (النسخة النهائية الشاملة لكل الميزات)                   ==
 // =============================================================
 
 import { SCRIPT_URL, QURAN_API_BASE_URL } from './config.js';
 
 // --- دوال جلب البيانات (GET Requests) ---
+
+/**
+ * دالة مساعدة لتقليل التكرار في طلبات GET.
+ * @param {string} action - اسم الإجراء المطلوب من الواجهة الخلفية.
+ * @param {string} errorMsg - رسالة الخطأ المخصصة.
+ * @returns {Promise<any>} - البيانات المطلوبة أو null عند الفشل.
+ */
+async function fetchFromApi(action, errorMsg) {
+    const url = `${SCRIPT_URL}?action=${action}`;
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`فشل استجابة الشبكة لـ ${action}.`);
+        const data = await response.json();
+        if (data.result === 'success') {
+            // إرجاع البيانات الرئيسية مباشرة
+            return data[Object.keys(data).find(k => k !== 'result')];
+        }
+        throw new Error(data.message || `خطأ غير معروف من الخادم لـ ${action}.`);
+    } catch (error) {
+        console.error(errorMsg, error);
+        return null;
+    }
+}
 
 export async function fetchPlayer(userName) {
     const url = `${SCRIPT_URL}?action=getPlayer&userName=${encodeURIComponent(userName)}`;
@@ -18,90 +41,36 @@ export async function fetchPlayer(userName) {
         throw new Error(data.message || 'خطأ غير معروف من الخادم.');
     } catch (error) {
         console.error("Error fetching player data:", error);
-        return 'error';
+        return 'error'; // إرجاع 'error' للتمييز بين "لم يتم العثور عليه" و "خطأ في الشبكة"
     }
 }
 
 export async function fetchQuestionsConfig() {
-    const url = `${SCRIPT_URL}?action=getQuestionsConfig`;
-    try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('فشل في جلب إعدادات الأسئلة.');
-        const data = await response.json();
-        return (data.result === 'success') ? data.questions : null;
-    } catch (error) {
-        console.error("Error fetching questions config:", error);
-        return null;
-    }
+    return fetchFromApi('getQuestionsConfig', 'فشل في جلب إعدادات الأسئلة.');
 }
 
 export async function fetchProgressionConfig() {
-    const url = `${SCRIPT_URL}?action=getProgressionConfig`;
-    try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('فشل في جلب إعدادات التقدم.');
-        const data = await response.json();
-        return (data.result === 'success') ? data.config : null;
-    } catch (error) {
-        console.error("Error fetching progression config:", error);
-        return null;
-    }
+    return fetchFromApi('getProgressionConfig', 'فشل في جلب إعدادات التقدم.');
 }
 
 export async function fetchGameRules() {
-    const url = `${SCRIPT_URL}?action=getGameRules`;
-    try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('فشل في جلب قواعد اللعبة.');
-        const data = await response.json();
-        return (data.result === 'success') ? data.rules : null;
-    } catch (error) {
-        console.error("Error fetching game rules:", error);
-        return null;
-    }
+    return fetchFromApi('getGameRules', 'فشل في جلب قواعد اللعبة.');
 }
 
 export async function fetchActiveChallenges() {
-    const url = `${SCRIPT_URL}?action=getActiveChallenges`;
-    try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('فشل في جلب التحديات.');
-        const data = await response.json();
-        return (data.result === 'success') ? data.challenges : [];
-    } catch (error) {
-        console.error("Error fetching challenges:", error);
-        return [];
-    }
+    const challenges = await fetchFromApi('getActiveChallenges', 'فشل في جلب التحديات.');
+    return challenges || []; // إرجاع مصفوفة فارغة دائمًا في حالة الفشل
 }
 
-// ▼▼▼ دالة جديدة: جلب إعدادات الإنجازات ▼▼▼
 export async function fetchAchievementsConfig() {
-    const url = `${SCRIPT_URL}?action=getAchievementsConfig`;
-    try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('فشل في جلب إعدادات الإنجازات.');
-        const data = await response.json();
-        return (data.result === 'success') ? data.achievements : [];
-    } catch (error) {
-        console.error("Error fetching achievements config:", error);
-        return [];
-    }
+    const achievements = await fetchFromApi('getAchievementsConfig', 'فشل في جلب إعدادات الإنجازات.');
+    return achievements || [];
 }
 
-// ▼▼▼ دالة جديدة: جلب بيانات لوحة الصدارة ▼▼▼
 export async function fetchLeaderboard() {
-    const url = `${SCRIPT_URL}?action=getLeaderboard`;
-    try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('فشل في جلب بيانات لوحة الصدارة.');
-        const data = await response.json();
-        return (data.result === 'success') ? data.leaderboard : [];
-    } catch (error) {
-        console.error("Error fetching leaderboard:", error);
-        return [];
-    }
+    const leaderboard = await fetchFromApi('getLeaderboard', 'فشل في جلب لوحة الصدارة.');
+    return leaderboard || [];
 }
-
 
 export async function fetchPageData(pageNumber) {
     try {
@@ -109,6 +78,11 @@ export async function fetchPageData(pageNumber) {
             fetch(`${QURAN_API_BASE_URL}/page/${pageNumber}/quran-uthmani`),
             fetch(`${QURAN_API_BASE_URL}/page/${pageNumber}/quran-uthmani-lines`)
         ]);
+
+        if (!pageResponse.ok || !linesResponse.ok) {
+            throw new Error(`فشل جلب بيانات الصفحة ${pageNumber} من خادم القرآن.`);
+        }
+
         const pageData = await pageResponse.json();
         const linesData = await linesResponse.json();
 
@@ -118,7 +92,7 @@ export async function fetchPageData(pageNumber) {
                 return { ...ayah, line: lineInfo ? lineInfo.line : null };
             });
         } else {
-            alert('هذه الصفحة لا تحتوي على آيات، أو حدث خطأ في جلب بياناتها.');
+            console.warn(`بيانات الصفحة ${pageNumber} فارغة أو غير صالحة.`);
             return null;
         }
     } catch (error) {
@@ -130,35 +104,30 @@ export async function fetchPageData(pageNumber) {
 
 // --- دوال إرسال البيانات (POST Requests) ---
 
-export async function savePlayer(playerData) {
-    try {
-        // إرسال طلب POST إلى Google Script
-        const response = await fetch(SCRIPT_URL, {
-            method: 'POST',
-            mode: 'cors', // مهم للسماح بالطلبات عبر المصادر
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ action: 'updatePlayer', payload: playerData })
-        });
-        // يمكنك إضافة معالجة للرد هنا إذا أردت
-        const result = await response.json();
-        console.log("Server response from savePlayer:", result);
-    } catch (error) {
-        console.error("Error saving player data:", error);
-        // يمكنك إظهار رسالة للمستخدم هنا بأن الحفظ فشل
-    }
-}
-
-export async function saveResult(resultData) {
+/**
+ * دالة مساعدة لتقليل التكرار في طلبات POST.
+ * @param {string} action - اسم الإجراء المطلوب.
+ * @param {object} payload - البيانات المراد إرسالها.
+ * @param {string} errorMsg - رسالة الخطأ المخصصة.
+ */
+async function postToApi(action, payload, errorMsg) {
     try {
         await fetch(SCRIPT_URL, {
             method: 'POST',
             mode: 'cors',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'saveResult', payload: resultData })
+            body: JSON.stringify({ action, payload })
         });
     } catch (error) {
-        console.error("Error saving result:", error);
+        console.error(errorMsg, error);
+        // يمكن إضافة منطق لإعادة المحاولة هنا في المستقبل
     }
+}
+
+export async function savePlayer(playerData) {
+    await postToApi('updatePlayer', playerData, 'Error saving player data:');
+}
+
+export async function saveResult(resultData) {
+    await postToApi('saveResult', resultData, 'Error saving result:');
 }
