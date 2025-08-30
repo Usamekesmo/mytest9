@@ -32,9 +32,9 @@
 
         <p>اختر القارئ، وحدد الصفحة لبدء الاختبار.</p>
         
-        <!-- ▼▼▼ تم التعديل: استبدال حقل الإدخال بقائمة منسدلة ▼▼▼ -->
+        <!-- تم استبدال حقل الإدخال بقائمة منسدلة -->
         <select id="pageSelect">
-            <!-- سيتم ملء هذه القائمة تلقائيًا بواسطة JavaScript -->
+            <option value="">-- اختر صفحة --</option>
         </select>
         
         <select id="qariSelect">
@@ -44,15 +44,17 @@
             <option value="ar.husary" data-locked="true">محمود خليل الحصري (مقفل)</option>
         </select>
         
-        <select id="questionsCount" class="hidden">
+        <select id="questionsCount">
             <option value="5">5 أسئلة</option>
+            <option value="10">10 أسئلة</option>
+            <option value="15">15 سؤالاً</option>
         </select>
 
         <div class="main-buttons">
             <button id="startButton">تسجيل الدخول / بدء الاختبار</button>
-            <!-- ▼▼▼ تم التعديل: إضافة زر لوحة الصدارة ▼▼▼ -->
-            <button id="leaderboardButton" class="secondary-button">لوحة الصدارة</button>
             <button id="storeButton" class="secondary-button">المتجر</button>
+            <!-- زر لوحة الصدارة الجديد -->
+            <button id="leaderboardButton" class="secondary-button">لوحة الصدارة</button>
         </div>
         
         <div id="loader" class="loader hidden"></div>
@@ -92,22 +94,28 @@
             <h2>المتجر</h2>
             <div id="player-diamonds-display" class="diamonds-counter"></div>
         </div>
-        <p>استخدم الألماس الذي كسبته لشراء عناصر مميزة!</p>
+        <p>استخدم الألماس الذي كسبته لشراء عناصر مميزة أو استبدل نقاط خبرتك!</p>
         <hr>
         <div id="store-items-container"></div>
         <button id="closeStoreButton">العودة إلى القائمة</button>
     </div>
 
-    <!-- ▼▼▼ تم التعديل: إضافة شاشة لوحة الصدارة ▼▼▼ -->
-    <!-- ======================= شاشة لوحة الصدارة ======================= -->
+    <!-- ======================= شاشة لوحة الصدارة (جديدة) ======================= -->
     <div id="leaderboard-screen" class="container hidden">
-        <h2>🏆 لوحة الصدارة 🏆</h2>
-        <p>هؤلاء هم أكثر اللاعبين حصدًا لنقاط الخبرة. هل يمكنك التفوق عليهم؟</p>
+        <h2>لوحة الصدارة</h2>
+        <p>شاهد ترتيبك بين أفضل 10 لاعبين!</p>
         <hr>
-        <div id="leaderboard-container">
-            <!-- سيتم ملء الجدول هنا بواسطة JavaScript -->
+        <div id="leaderboard-list">
+            <!-- سيتم ملء القائمة هنا بواسطة JavaScript -->
         </div>
         <button id="closeLeaderboardButton">العودة إلى القائمة</button>
+    </div>
+
+    <!-- ======================= حاوية إشعارات الإنجازات (جديدة) ======================= -->
+    <div id="achievement-toast" class="achievement-toast hidden">
+        <h4>🏆 إنجاز جديد!</h4>
+        <p id="achievement-toast-name"></p>
+        <small id="achievement-toast-reward"></small>
     </div>
 
     <script type="module" src="js/main.js"></script>
