@@ -140,7 +140,8 @@ async function onStartButtonClick() {
 }
 
 function onStoreButtonClick() {
-    if (!player.playerData.name) {
+    // التأكد من أن اللاعب قد سجل دخوله
+    if (!player.playerData.name) { // <-- هذا هو الشرط الصحيح
         alert("يرجى تسجيل الدخول أولاً لزيارة المتجر.");
         return;
     }
@@ -148,7 +149,8 @@ function onStoreButtonClick() {
 }
 
 async function onLeaderboardButtonClick() {
-    if (!player.playerDatalogin) {
+    // التأكد من أن اللاعب قد سجل دخوله
+    if (!player.playerData.name) { // <-- هذا هو الشرط الصحيح
         alert("يرجى تسجيل الدخول أولاً لعرض لوحة الصدارة.");
         return;
     }
@@ -162,7 +164,6 @@ async function onLeaderboardButtonClick() {
         alert("تعذر تحميل لوحة الصدارة. يرجى المحاولة مرة أخرى.");
     }
 }
-
 async function startChallenge(challengeId) {
     const userName = ui.userNameInput.value.trim();
     if (!userName) {
@@ -241,3 +242,4 @@ async function startTestWithSettings(settings) {
 
 // --- 4. تشغيل التطبيق ---
 initialize();
+
