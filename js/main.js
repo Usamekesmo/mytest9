@@ -173,12 +173,20 @@ async function startChallenge(challengeId) {
     });
 }
 
+// ▼▼▼ تم تعديل هذه الدالة بالكامل ▼▼▼
 async function startTestWithSettings(settings) {
     ui.toggleLoader(true);
     const pageAyahs = await fetchPageData(settings.pageNumber);
     ui.toggleLoader(false);
-    if (pageAyahs) {
-        quiz.start(settings);
+
+    // التحقق ليس فقط من وجود المصفوفة، بل ومن أنها تحتوي على عناصر
+    if (pageAyahs && pageAyahs.length > 0) {
+        // تمرير الآيات مباشرة إلى دالة البدء
+        quiz.start({ ...settings, pageAyahs: pageAyahs });
+    } else {
+        // إذا فشل جلب البيانات، أبلغ المستخدم ولا تبدأ الاختبار
+        alert(`عفواً، لم نتمكن من جلب بيانات الصفحة ${settings.pageNumber}. قد تكون الصفحة غير موجودة أو هناك مشكلة في الشبكة. يرجى المحاولة مرة أخرى.`);
+        console.error("فشل بدء الاختبار لأن بيانات الصفحة فارغة.");
     }
 }
 
