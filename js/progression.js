@@ -1,6 +1,6 @@
 // =============================================================
 // ==      وحدة محرك التقدم (المستويات، المتجر، القواعد)      ==
-// ==      (محدثة لتقرأ بيانات المتجر الجديدة)                ==
+// ==      (النسخة النهائية الشاملة لكل الميزات)            ==
 // =============================================================
 
 import { fetchProgressionConfig, fetchGameRules } from './api.js';
@@ -9,7 +9,8 @@ import { fetchProgressionConfig, fetchGameRules } from './api.js';
 let config = {
     levels: [],
     store: [],
-    rules: {}
+    rules: {},
+    questionRewards: [] // لإعدادات مكافآت الأسئلة
 };
 
 /**
@@ -22,17 +23,16 @@ export async function initializeProgression() {
         fetchGameRules()
     ]);
 
-    // التعامل مع إعدادات التقدم (المستويات والمتجر)
+    // التعامل مع إعدادات التقدم (المستويات، المتجر، مكافآت الأسئلة)
     if (progConfig) {
         config.levels = progConfig.levels || [];
-        // ▼▼▼ تم التعديل: التأكد من أن بيانات المتجر الجديدة يتم تحميلها بشكل صحيح ▼▼▼
         config.store = progConfig.store || [];
-        // ▲▲▲ نهاية التعديل ▲▲▲
+        config.questionRewards = progConfig.questionRewards || [];
         
         // ترتيب المستويات تصاعدياً أمر حاسم لصحة العمليات الحسابية
         config.levels.sort((a, b) => a.level - b.level);
         
-        console.log("تم جلب إعدادات التقدم (المستويات والمتجر).");
+        console.log("تم جلب إعدادات التقدم (المستويات، المتجر، مكافآت الأسئلة).");
     } else {
         console.error("فشل فادح: لم يتم جلب إعدادات التقدم.");
     }
@@ -46,14 +46,13 @@ export async function initializeProgression() {
             console.log("progression.js: تم العثور على allowedPages كنص، جاري تحويلها إلى مصفوفة...");
             
             rules.allowedPages = rules.allowedPages
-                .split(',') // 1. قسم النص عند كل فاصلة
-                .map(item => parseInt(item.trim(), 10)) // 2. حول كل عنصر إلى رقم
-                .filter(num => !isNaN(num)); // 3. أزل أي قيم فاشلة (ليست أرقامًا)
+                .split(',')
+                .map(item => parseInt(item.trim(), 10))
+                .filter(num => !isNaN(num));
 
             console.log("progression.js: allowedPages بعد التحويل:", rules.allowedPages);
         }
 
-        // تخزين القواعد المعالجة والنظيفة
         config.rules = rules;
         console.log("تم جلب ومعالجة قواعد اللعبة بنجاح.");
 
@@ -73,10 +72,13 @@ export function getGameRules() {
 }
 
 /**
- * @returns {Array} - مصفوفة عناصر المتجر.
+ * @returns {Array} - مصفوفة عناصر المتجر، مرتبة.
  */
 export function getStoreItems() {
-    return config.store;
+    if (config.store && Array.isArray(config.store)) {
+        return [...config.store].sort((a, b) => a.sortOrder - b.sortOrder);
+    }
+    return [];
 }
 
 // --- دوال حسابية للتقدم ---
@@ -138,4 +140,34 @@ export function checkForLevelUp(oldXp, newXp) {
     }
     
     return null;
+}
+
+/**
+ * يحسب الحد الأقصى لعدد الأسئلة التي يمكن للاعب اختيارها بناءً على مستواه.
+ * @param {number} playerLevel - مستوى اللاعب الحالي.
+ * @returns {number} - الحد الأقصى لعدد الأسئلة.
+ */
+export function getMaxQuestionsForLevel(playerLevel) {
+    const baseQuestions = 5;
+    let maxQuestions = baseQuestions;
+
+    if (!config.questionRewards || config.questionRewards.length === 0) {
+        return baseQuestions;
+    }
+
+    const sortedRewards = [...config.questionRewards].sort((a, b) => a.level - b.level);
+
+    let cumulativeQuestions = 0;
+    for (const reward of sortedRewards) {
+        if (playerLevel >= reward.level) {
+            if (reward.isCumulative) {
+                cumulativeQuestions += reward.questionsToAdd;
+            } else {
+                cumulativeQuestions = reward.questionsToAdd;
+            }
+        }
+    }
+    
+    // نستخدم Math.max للتأكد من أننا لا نعيد قيمة أقل من الأساس
+    return Math.max(baseQuestions, baseQuestions + cumulativeQuestions);
 }
