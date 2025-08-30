@@ -1,126 +1,114 @@
 // =============================================================
-// ==      وحدة إدارة الإنجازات (المحرك الديناميكي)           ==
+// ==      وحدة نظام الإنجازات الديناميكي (جديدة بالكامل)     ==
 // =============================================================
 
 import { fetchAchievementsConfig } from './api.js';
 import * as player from './player.js';
 import * as ui from './ui.js';
+import * as progression from './progression.js';
 
-let allAchievements = [];
+let achievementsConfig = [];
 
 /**
- * دالة التهيئة، تقوم بجلب كل الإنجازات المتاحة من الخادم.
+ * يقوم بتهيئة الوحدة عن طريق جلب إعدادات الإنجازات من الخادم.
  */
 export async function initializeAchievements() {
-    allAchievements = await fetchAchievementsConfig();
-    if (allAchievements && allAchievements.length > 0) {
-        console.log(`تم تحميل ${allAchievements.length} إنجاز ديناميكي من الخادم.`);
+    achievementsConfig = await fetchAchievementsConfig();
+    if (achievementsConfig && achievementsConfig.length > 0) {
+        console.log(`تم تحميل ${achievementsConfig.length} إنجاز من لوحة التحكم.`);
     } else {
-        console.log("لم يتم العثور على إعدادات للإنجازات أو فشل في جلبها.");
+        console.warn("لم يتم العثور على إعدادات للإنجازات أو فشل في جلبها.");
     }
 }
 
 /**
- * الدالة الرئيسية للتحقق من الإنجازات.
- * @param {string} eventType - نوع الحدث الذي وقع (مثل 'quiz_completed').
- * @param {object} eventData - بيانات إضافية متعلقة بالحدث.
+ * الدالة الرئيسية التي يتم استدعاؤها من أجزاء مختلفة من التطبيق للتحقق من الإنجازات.
+ * @param {string} eventName - اسم الحدث الذي وقع (مثل 'login', 'quiz_completed').
+ * @param {object} eventData - بيانات إضافية متعلقة بالحدث (مثل نتيجة الاختبار).
  */
-export function checkAchievements(eventType, eventData = {}) {
-    // دمج بيانات اللاعب مع بيانات الحدث لتسهيل الوصول إليها
-    const context = { ...player.playerData, ...eventData };
+export function checkAchievements(eventName, eventData = {}) {
+    if (!achievementsConfig || achievementsConfig.length === 0) {
+        return;
+    }
 
-    // فلترة الإنجازات التي يجب التحقق منها بناءً على الحدث الحالي
-    const relevantAchievements = allAchievements.filter(ach => ach.triggerEvent === eventType);
-
-    const newAchievements = [];
+    // فلترة الإنجازات التي تستجيب لهذا الحدث المحدد
+    const relevantAchievements = achievementsConfig.filter(ach => ach.triggerEvent === eventName);
 
     for (const achievement of relevantAchievements) {
-        // تحقق مما إذا كان اللاعب يمتلك هذا الإنجاز بالفعل
+        // التأكد من أن اللاعب لم يحصل على هذا الإنجاز من قبل
         if (player.playerData.achievements.includes(achievement.id)) {
             continue;
         }
 
-        // استدعاء المحرك المنطقي للتحقق من الشرط
-        if (isConditionMet(achievement, context)) {
-            newAchievements.push(achievement);
+        // التحقق من شرط الإنجاز
+        if (isConditionMet(achievement, eventData)) {
+            grantAchievement(achievement);
         }
-    }
-
-    if (newAchievements.length > 0) {
-        grantAchievements(newAchievements);
     }
 }
 
 /**
- * المحرك المنطقي: يتحقق مما إذا كان شرط الإنجاز قد تحقق.
- * @param {object} achievement - كائن الإنجاز بتعريفاته.
- * @param {object} context - البيانات المتاحة للتحقق (بيانات اللاعب + بيانات الحدث).
+ * يتحقق مما إذا كان شرط إنجاز معين قد تحقق.
+ * @param {object} achievement - كائن إعدادات الإنجاز.
+ * @param {object} eventData - بيانات الحدث.
  * @returns {boolean} - `true` إذا تحقق الشرط.
  */
-function isConditionMet(achievement, context) {
-    const { targetProperty, comparison, targetValue } = achievement;
+function isConditionMet(achievement, eventData) {
+    // بناء كائن بيانات شامل للتحقق منه
+    const dataContext = {
+        ...eventData, // بيانات الحدث المباشرة
+        xp: player.playerData.xp,
+        diamonds: player.playerData.diamonds,
+        level: progression.getLevelInfo(player.playerData.xp).level,
+        inventorySize: player.playerData.inventory.length,
+        totalQuizzes: player.playerData.totalQuizzesCompleted
+    };
 
-    // الحصول على القيمة الفعلية من السياق
-    // يدعم الخصائص المتداخلة مثل 'inventory.length'
-    const actualValue = getProperty(context, targetProperty);
+    const propertyValue = dataContext[achievement.targetProperty];
+    const targetValue = achievement.targetValue;
 
-    // الحصول على القيمة المستهدفة (قد تكون خاصية أخرى من السياق)
-    const expectedValueRaw = (typeof targetValue === 'string' && context.hasOwnProperty(targetValue))
-        ? context[targetValue]
-        : targetValue;
-    
-    // تحويل القيم لتكون من نفس النوع قبل المقارنة
-    const finalActual = (typeof actualValue === 'boolean') ? actualValue : Number(actualValue);
-    let finalExpected = (typeof expectedValueRaw === 'boolean') ? expectedValueRaw : Number(expectedValueRaw);
-
-    // إذا فشل التحويل إلى رقم، نعتبرها كنصوص (للتعامل مع حالات مستقبلية)
-    if (isNaN(finalActual) || isNaN(finalExpected)) {
-        // مقارنة نصية بسيطة
-        if (comparison === '===') return String(actualValue) === String(expectedValueRaw);
-        if (comparison === '!==') return String(actualValue) !== String(expectedValueRaw);
+    // إذا كانت الخاصية المستهدفة غير موجودة، فالشرط لم يتحقق
+    if (propertyValue === undefined) {
         return false;
     }
-    
-    // إجراء المقارنة الرقمية
-    switch (comparison) {
-        case '===': return finalActual === finalExpected;
-        case '>=': return finalActual >= finalExpected;
-        case '<=': return finalActual <= finalExpected;
-        case '>': return finalActual > finalExpected;
-        case '<': return finalActual < finalExpected;
-        case '!==': return finalActual !== finalExpected;
+
+    // تحويل القيمة المستهدفة إلى رقم إذا كانت الخاصية رقمية
+    const numericTargetValue = !isNaN(Number(targetValue)) ? Number(targetValue) : targetValue;
+
+    switch (achievement.comparison) {
+        case '===':
+            return propertyValue === numericTargetValue;
+        case '>=':
+            return propertyValue >= numericTargetValue;
+        case '<=':
+            return propertyValue <= numericTargetValue;
+        case 'includes':
+            return Array.isArray(propertyValue) && propertyValue.includes(numericTargetValue);
+        case '!==':
+            return propertyValue !== numericTargetValue;
         default:
-            console.error(`عامل مقارنة غير معروف: ${comparison} في الإنجاز ${achievement.id}`);
             return false;
     }
 }
 
 /**
- * دالة مساعدة للوصول إلى الخصائص المتداخلة بأمان.
- * مثال: getProperty({ a: { b: 5 } }, 'a.b') سيعيد 5.
+ * يمنح اللاعب إنجازًا ومكافآته.
+ * @param {object} achievement - كائن الإنجاز الذي تم تحقيقه.
  */
-function getProperty(obj, path) {
-    if (typeof path !== 'string') return undefined;
-    return path.split('.').reduce((o, i) => (o === undefined || o === null ? undefined : o[i]), obj);
-}
+function grantAchievement(achievement) {
+    console.log(`تهانينا! تم تحقيق الإنجاز: ${achievement.name}`);
 
+    // 1. إضافة الإنجاز إلى بيانات اللاعب
+    player.playerData.achievements.push(achievement.id);
 
-/**
- * تمنح اللاعب الإنجازات الجديدة وتضيف المكافآت.
- * @param {Array<object>} achievementsToGrant - مصفوفة الإنجازات التي تم تحقيقها.
- */
-function grantAchievements(achievementsToGrant) {
-    for (const achievement of achievementsToGrant) {
-        console.log(`تهانينا! لقد حققت إنجاز: ${achievement.name}`);
-        
-        // 1. أضف الإنجاز إلى قائمة اللاعب
-        player.playerData.achievements.push(achievement.id);
+    // 2. إضافة المكافآت
+    player.playerData.xp += achievement.xpReward;
+    player.playerData.diamonds += achievement.diamondsReward;
 
-        // 2. أضف المكافآت
-        player.playerData.xp += achievement.xpReward;
-        player.playerData.diamonds += achievement.diamondsReward;
+    // 3. إظهار إشعار مرئي للمستخدم
+    ui.showAchievementToast(achievement);
 
-        // 3. أظهر تنبيهًا للمستخدم
-        ui.showAchievementAlert(achievement);
-    }
+    // ملاحظة: لا يتم استدعاء savePlayer() هنا.
+    // يجب أن يتم الحفظ في نهاية العملية الرئيسية (مثل نهاية الاختبار أو بعد الشراء)
+    // لضمان حفظ كل التغييرات مرة واحدة.
 }
