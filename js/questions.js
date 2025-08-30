@@ -1,5 +1,6 @@
 // =============================================================
 // ==      وحدة مصنع الأسئلة (تحتوي على كل أنواع الأسئلة)     ==
+// ==      (النسخة النهائية - لا تغييرات جوهرية)             ==
 // =============================================================
 
 // دالة مساعدة لخلط عناصر مصفوفة، تستخدمها معظم دوال الأسئلة
@@ -18,7 +19,7 @@ function generateChooseNextQuestion(pageAyahs, qari, handleResultCallback) {
     const wrongOptions = shuffleArray(pageAyahs.filter(a => a.number !== correctNextAyah.number && a.number !== questionAyah.number)).slice(0, 2);
     const options = shuffleArray([correctNextAyah, ...wrongOptions]);
     
-    const questionHTML = `<h3>السؤال: استمع واختر الآية التالية</h3><audio controls autoplay src="https://cdn.islamic.network/quran/audio/128/${qari}/${questionAyah.number}.mp3"></audio>${options.map(opt => `<div class="option-div" data-number="${opt.number}">${opt.text}</div>` ).join('')}`;
+    const questionHTML = `<h3>السؤال: استمع واختر الآية التالية</h3><audio controls autoplay src="https://cdn.islamic.network/quran/audio/128/${qari}/${questionAyah.number}.mp3"></audio>${options.map(opt => `<div class="option-div" data-number="${opt.number}">${opt.text}</div>`  ).join('')}`;
     const correctAnswer = correctNextAyah.text;
     const setupListeners = (area) => area.querySelectorAll('.option-div').forEach(el => el.addEventListener('click', () => handleResultCallback(el.dataset.number == correctNextAyah.number, correctAnswer, el)));
     return { questionHTML, correctAnswer, setupListeners };
@@ -36,7 +37,7 @@ function generateLocateAyahQuestion(pageAyahs, qari, handleResultCallback) {
     else if (ayahIndex < (totalAyahs * 2) / 3) correctLocation = 'وسط';
     else correctLocation = 'نهاية';
     
-    const questionHTML = `<h3>السؤال: أين يقع موضع هذه الآية في الصفحة؟</h3><audio controls autoplay src="https://cdn.islamic.network/quran/audio/128/${qari}/${questionAyah.number}.mp3"></audio><div class="interactive-area">${['بداية', 'وسط', 'نهاية'].map(loc => `<div class="choice-box" data-loc="${loc}">${loc} الصفحة</div>` ).join('')}</div>`;
+    const questionHTML = `<h3>السؤال: أين يقع موضع هذه الآية في الصفحة؟</h3><audio controls autoplay src="https://cdn.islamic.network/quran/audio/128/${qari}/${questionAyah.number}.mp3"></audio><div class="interactive-area">${['بداية', 'وسط', 'نهاية'].map(loc => `<div class="choice-box" data-loc="${loc}">${loc} الصفحة</div>`  ).join('')}</div>`;
     const correctAnswer = `${correctLocation} الصفحة`;
     const setupListeners = (area) => area.querySelectorAll('.choice-box').forEach(el => el.addEventListener('click', () => handleResultCallback(el.dataset.loc === correctLocation, correctAnswer, el)));
     return { questionHTML, correctAnswer, setupListeners };
@@ -68,7 +69,7 @@ function generateAudioIntruderQuestion(pageAyahs, qari, handleResultCallback) {
     if (pageAyahs.length < 4) return null;
     let allFourAyahs = shuffleArray(pageAyahs.slice(0, 4));
     const intruderAyah = allFourAyahs[0];
-    const audioQueue = allFourAyahs.map(a => `https://cdn.islamic.network/quran/audio/128/${qari}/${a.number}.mp3` );
+    const audioQueue = allFourAyahs.map(a => `https://cdn.islamic.network/quran/audio/128/${qari}/${a.number}.mp3`  );
     const playAudioQueue = () => { let p = new Audio(), i = 0; p.src = audioQueue[i]; p.play(); p.onended = () => { i++; if (i < audioQueue.length) { p.src = audioQueue[i]; p.play(); } }; };
     const questionHTML = `<h3>السؤال: استمع للآيات وحدد الآية الدخيلة</h3><button id="play-audio-btn">▶️ تشغيل الآيات</button><div class="interactive-area">${allFourAyahs.map((ayah, i) => `<div class="number-box" data-number="${ayah.number}">${i + 1}</div>`).join('')}</div>`;
     const correctAnswer = `الآية رقم 1 (النص: ${intruderAyah.text.substring(0, 50)}...)`;
@@ -84,7 +85,7 @@ function generateIdentifyAyahNumberQuestion(pageAyahs, qari, handleResultCallbac
     const correctNumber = questionAyah.numberInSurah;
     let options = [correctNumber];
     while (options.length < 4) { const wrongNumber = correctNumber + Math.floor(Math.random() * 5) - 2; if (wrongNumber > 0 && !options.includes(wrongNumber)) options.push(wrongNumber); }
-    const questionHTML = `<h3>السؤال: استمع للآية، ثم اختر رقمها الصحيح في السورة</h3><audio controls autoplay src="https://cdn.islamic.network/quran/audio/128/${qari}/${questionAyah.number}.mp3"></audio><div class="interactive-area">${shuffleArray(options ).map(opt => `<div class="choice-box" data-number="${opt}">${opt}</div>`).join('')}</div>`;
+    const questionHTML = `<h3>السؤال: استمع للآية، ثم اختر رقمها الصحيح في السورة</h3><audio controls autoplay src="https://cdn.islamic.network/quran/audio/128/${qari}/${questionAyah.number}.mp3"></audio><div class="interactive-area">${shuffleArray(options  ).map(opt => `<div class="choice-box" data-number="${opt}">${opt}</div>`).join('')}</div>`;
     const correctAnswer = String(correctNumber);
     const setupListeners = (area) => area.querySelectorAll('.choice-box').forEach(el => el.addEventListener('click', () => handleResultCallback(el.dataset.number == correctNumber, correctAnswer, el)));
     return { questionHTML, correctAnswer, setupListeners };
@@ -141,7 +142,7 @@ function generateIdentifyAyahEndQuestion(pageAyahs, qari, handleResultCallback) 
     const correctWord = firstAyahWords[firstAyahWords.length - 1];
     const options = shuffleArray([correctWord, firstAyahWords[firstAyahWords.length - 2], secondAyah.text.split(' ')[0]]);
     const audioQueue = [`https://cdn.islamic.network/quran/audio/128/${qari}/${firstAyah.number}.mp3`, `https://cdn.islamic.network/quran/audio/128/${qari}/${secondAyah.number}.mp3`];
-    const playAudioQueue = ( ) => { let p = new Audio(), i = 0; p.src = audioQueue[i]; p.play(); p.onended = () => { i++; if (i < audioQueue.length) { p.src = audioQueue[i]; p.play(); } }; };
+    const playAudioQueue = (  ) => { let p = new Audio(), i = 0; p.src = audioQueue[i]; p.play(); p.onended = () => { i++; if (i < audioQueue.length) { p.src = audioQueue[i]; p.play(); } }; };
     const questionHTML = `<h3>السؤال: استمع للتلاوة المتصلة، ثم حدد الكلمة التي انتهت بها الآية الأولى</h3><button id="play-audio-btn">▶️ تشغيل الآيات</button><div class="interactive-area">${options.map(opt => `<div class="choice-box" data-word="${opt}">${opt}</div>`).join('')}</div>`;
     const correctAnswer = correctWord;
     const setupListeners = (area) => { area.querySelector('#play-audio-btn').addEventListener('click', playAudioQueue); area.querySelectorAll('.choice-box').forEach(el => el.addEventListener('click', () => handleResultCallback(el.dataset.word === correctWord, correctAnswer, el))); };
@@ -164,7 +165,7 @@ function generateFindUniqueWordQuestion(pageAyahs, qari, handleResultCallback) {
     }
     if (!questionAyah) return null;
     const options = shuffleArray([uniqueWord, ...repeatedWords]);
-    const questionHTML = `<h3>السؤال: أي من كلمات الآية التالية لم تتكرر في هذه الصفحة؟</h3><audio controls autoplay src="https://cdn.islamic.network/quran/audio/128/${qari}/${questionAyah.number}.mp3"></audio><div class="interactive-area">${options.map(opt => `<div class="choice-box" data-word="${opt}">${opt}</div>` ).join('')}</div>`;
+    const questionHTML = `<h3>السؤال: أي من كلمات الآية التالية لم تتكرر في هذه الصفحة؟</h3><audio controls autoplay src="https://cdn.islamic.network/quran/audio/128/${qari}/${questionAyah.number}.mp3"></audio><div class="interactive-area">${options.map(opt => `<div class="choice-box" data-word="${opt}">${opt}</div>`  ).join('')}</div>`;
     const correctAnswer = uniqueWord;
     const setupListeners = (area) => area.querySelectorAll('.choice-box').forEach(el => el.addEventListener('click', () => handleResultCallback(el.dataset.word === uniqueWord, correctAnswer, el)));
     return { questionHTML, correctAnswer, setupListeners };
@@ -196,7 +197,7 @@ function generateFindPageAyahQuestion(pageAyahs, qari, handleResultCallback) {
     const correctAyah = shuffleArray(pageAyahs)[0];
     const intruderAyahs = pageAyahs.filter(a => a.number !== correctAyah.number).slice(0, 3);
     const allFourAyahs = shuffleArray([correctAyah, ...intruderAyahs]);
-    const audioQueue = allFourAyahs.map(a => `https://cdn.islamic.network/quran/audio/128/${qari}/${a.number}.mp3` );
+    const audioQueue = allFourAyahs.map(a => `https://cdn.islamic.network/quran/audio/128/${qari}/${a.number}.mp3`  );
     const playAudioQueue = () => { let p = new Audio(), i = 0; p.src = audioQueue[i]; p.play(); p.onended = () => { i++; if (i < audioQueue.length) { p.src = audioQueue[i]; p.play(); } }; };
     const questionHTML = `<h3>السؤال: استمع للآيات وحدد أي منها ينتمي لهذه الصفحة</h3><button id="play-audio-btn">▶️ تشغيل الآيات</button><div class="interactive-area">${allFourAyahs.map((ayah, i) => `<div class="number-box" data-number="${ayah.number}">${i + 1}</div>`).join('')}</div>`;
     const correctAnswer = `الآية التي نصها: ${correctAyah.text.substring(0, 50)}...`;
@@ -214,7 +215,7 @@ function generateChoosePreviousQuestion(pageAyahs, qari, handleResultCallback) {
     const correctPreviousAyah = pageAyahs[startIndex - 1];
     const wrongOptions = shuffleArray(pageAyahs.filter(a => a.number !== correctPreviousAyah.number && a.number !== questionAyah.number)).slice(0, 2);
     const options = shuffleArray([correctPreviousAyah, ...wrongOptions]);
-    const questionHTML = `<h3>السؤال: استمع واختر الآية السابقة لهذه الآية</h3><audio controls autoplay src="https://cdn.islamic.network/quran/audio/128/${qari}/${questionAyah.number}.mp3"></audio>${options.map(opt => `<div class="option-div" data-number="${opt.number}">${opt.text}</div>` ).join('')}`;
+    const questionHTML = `<h3>السؤال: استمع واختر الآية السابقة لهذه الآية</h3><audio controls autoplay src="https://cdn.islamic.network/quran/audio/128/${qari}/${questionAyah.number}.mp3"></audio>${options.map(opt => `<div class="option-div" data-number="${opt.number}">${opt.text}</div>`  ).join('')}`;
     const correctAnswer = correctPreviousAyah.text;
     const setupListeners = (area) => area.querySelectorAll('.option-div').forEach(el => el.addEventListener('click', () => handleResultCallback(el.dataset.number == correctPreviousAyah.number, correctAnswer, el)));
     return { questionHTML, correctAnswer, setupListeners };
