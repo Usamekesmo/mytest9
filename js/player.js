@@ -1,9 +1,10 @@
 // =============================================================
 // ==      وحدة إدارة بيانات اللاعب (تحميل وحفظ)             ==
-// ==      (محدثة لتشمل بيانات الإنجازات)                    ==
+// ==      (النسخة النهائية الشاملة لكل الميزات)            ==
 // =============================================================
 
 import { fetchPlayer, savePlayer as savePlayerToApi } from './api.js';
+import * as achievements from './achievements.js';
 
 // هذا هو "مصدر الحقيقة" لبيانات اللاعب داخل التطبيق
 export let playerData = {
@@ -11,15 +12,13 @@ export let playerData = {
     xp: 0,
     diamonds: 0,
     inventory: [],
-    // ▼▼▼ تم التعديل: إضافة حقول جديدة للإنجازات ▼▼▼
-    achievements: [],
-    totalQuizzesCompleted: 0,
-    // ▲▲▲ نهاية التعديل ▲▲▲
+    achievements: [], // لتخزين الإنجازات المكتسبة
+    totalQuizzesCompleted: 0, // لتتبع عدد الاختبارات
     isNew: true,
-    // هذا الكائن تتم إدارته محلياً فقط ولا يتم جلبه من الخادم
+    // هذا الكائن تتم إدارته محلياً فقط ولا يتم جلبه من الخادم مباشرة بهذه الطريقة
     dailyQuizzes: {
         count: 0,
-        lastPlayedDate: '' // سيتم تحديثه عند تحميل اللاعب
+        lastPlayedDate: ''
     }
 };
 
@@ -42,21 +41,21 @@ export async function loadPlayer(userName) {
     }
 
     if (fetchedData) {
-        // تم العثور على اللاعب
-        // دمج البيانات المحملة مع البيانات الافتراضية
-        // هذا الكود مرن بما يكفي ليشمل الحقول الجديدة تلقائيًا
-        playerData = { ...playerData, ...fetchedData, isNew: false };
-        
-        // ضمان وجود القيم الافتراضية في حال لم تكن موجودة في البيانات القديمة
-        if (!playerData.achievements) playerData.achievements = [];
-        if (!playerData.totalQuizzesCompleted) playerData.totalQuizzesCompleted = 0;
-
+        // لاعب موجود: قم بدمج بياناته مع الحالة الافتراضية
+        playerData = {
+            ...playerData, // للحفاظ على بنية dailyQuizzes
+            ...fetchedData,
+            isNew: false
+        };
         console.log(`مرحباً بعودتك: ${playerData.name}`);
         console.log("ممتلكاتك:", playerData.inventory);
         console.log("إنجازاتك:", playerData.achievements);
+        
+        // تحقق من الإنجازات عند تسجيل الدخول (مثل إنجازات المستويات)
+        achievements.checkAchievements('login');
 
     } else {
-        // لاعب جديد: إعادة تعيين كل شيء إلى الحالة الافتراضية
+        // لاعب جديد
         playerData = {
             name: userName,
             xp: 0,
@@ -73,7 +72,6 @@ export async function loadPlayer(userName) {
     // في كلتا الحالتين (لاعب جديد أو قديم)، نتحقق من العداد اليومي
     const today = getTodayDateString();
     if (playerData.dailyQuizzes.lastPlayedDate !== today) {
-        // إذا كان اليوم مختلفًا، أعد تعيين العداد
         playerData.dailyQuizzes = { count: 0, lastPlayedDate: today };
         console.log("يوم جديد! تم إعادة تعيين عداد الاختبارات اليومية.");
     }
@@ -86,7 +84,7 @@ export async function loadPlayer(userName) {
  */
 export async function savePlayer() {
     // لا نرسل كل بيانات اللاعب، فقط ما هو موجود في قاعدة البيانات
-    // ▼▼▼ تم التعديل: إضافة الحقول الجديدة إلى الكائن الذي سيتم حفظه ▼▼▼
+    // `isNew` و `dailyQuizzes` تتم إدارتهما محليًا فقط
     const dataToSave = {
         name: playerData.name,
         xp: playerData.xp,
@@ -97,5 +95,5 @@ export async function savePlayer() {
     };
     
     await savePlayerToApi(dataToSave);
-    console.log("تم إرسال طلب حفظ بيانات اللاعب (مع الإنجازات) إلى السحابة.");
+    console.log("تم إرسال طلب حفظ بيانات اللاعب إلى السحابة.");
 }
