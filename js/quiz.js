@@ -9,7 +9,7 @@ import { fetchQuestionsConfig } from './api.js';
 import { allQuestionGenerators } from './questions.js';
 import * as player from './player.js';
 import * as progression from './progression.js';
-import * as achievements from './achievements.js'; // ▼▼▼ تم التعديل: استيراد وحدة الإنجازات ▼▼▼
+import * as achievements from './achievements.js';
 
 // --- حالة الاختبار (State) ---
 let state = {
@@ -22,7 +22,7 @@ let state = {
     userName: '',
     pageNumber: 0,
     xpEarned: 0,
-    isChallenge: false // تمت إضافة هذه الخاصية لتتبع التحديات
+    isChallenge: false
 };
 
 let activeQuestionFunctions = [];
@@ -47,10 +47,11 @@ export async function initializeQuiz() {
     }
 }
 
+// ▼▼▼ تم تعديل هذه الدالة ▼▼▼
 export function start(settings) {
-    // إعادة تعيين الحالة مع الإعدادات الجديدة
+    // إعادة تعيين الحالة مع الإعدادات الجديدة، بما في ذلك pageAyahs
     state = {
-        ...state, // يحتفظ بالقيم الافتراضية مثل errorLog: []
+        ...state,
         ...settings,
         score: 0,
         currentQuestionIndex: 0,
@@ -78,6 +79,7 @@ function displayNextQuestion() {
     }
     
     const randomGenerator = shuffleArray(activeQuestionFunctions)[0];
+    // الآن نمرر state.pageAyahs التي تم تعيينها في دالة start
     const question = randomGenerator(state.pageAyahs, state.selectedQari, handleResult);
 
     if (question) {
@@ -85,6 +87,7 @@ function displayNextQuestion() {
         question.setupListeners(ui.questionArea);
     } else {
         console.warn(`فشل مولد الأسئلة ${randomGenerator.name} في إنشاء سؤال. يتم المحاولة مرة أخرى.`);
+        // استدعاء ذاتي آمن لأننا تأكدنا من أن pageAyahs ليست فارغة في main.js
         displayNextQuestion();
     }
 }
@@ -113,7 +116,6 @@ async function endQuiz() {
     ui.updateProgress(state.totalQuestions, state.totalQuestions, true);
     const rules = progression.getGameRules();
 
-    // ▼▼▼ تم التعديل: زيادة عداد الاختبارات والتحقق من الإنجازات ▼▼▼
     player.playerData.totalQuizzesCompleted++;
 
     achievements.checkAchievements('quiz_completed', {
@@ -122,7 +124,6 @@ async function endQuiz() {
         isChallenge: state.isChallenge,
         pageNumber: state.pageNumber
     });
-    // ▲▲▲ نهاية التعديل ▲▲▲
 
     if (state.score === state.totalQuestions) {
         state.xpEarned += rules.xpBonusAllCorrect || 0;
@@ -155,10 +156,6 @@ async function endQuiz() {
     ui.updateSaveMessage(true);
 }
 
-/**
- * دالة مساعدة جديدة لتصدير حالة الاختبار الحالية.
- * @returns {object} - كائن حالة الاختبار.
- */
 export function getCurrentState() {
     return state;
 }
