@@ -82,18 +82,26 @@ export async function loadPlayer(userName) {
 /**
  * يحفظ بيانات اللاعب الحالية في السحابة.
  */
+// (الكود السابق في الملف يبقى كما هو )
+
+/**
+ * يحفظ بيانات اللاعب الحالية في السحابة.
+ */
 export async function savePlayer() {
-    // لا نرسل كل بيانات اللاعب، فقط ما هو موجود في قاعدة البيانات
-    // `isNew` و `dailyQuizzes` تتم إدارتهما محليًا فقط
+    // ▼▼▼ هذا هو الكائن الذي تم تعديله ▼▼▼
     const dataToSave = {
         name: playerData.name,
         xp: playerData.xp,
         diamonds: playerData.diamonds,
         inventory: playerData.inventory,
         achievements: playerData.achievements,
-        totalQuizzesCompleted: playerData.totalQuizzesCompleted
+        totalQuizzesCompleted: playerData.totalQuizzesCompleted // <-- الإضافة الضرورية
     };
+    // ▲▲▲ نهاية التعديل ▲▲▲
     
+    console.log("جاري حفظ بيانات اللاعب الكاملة:", dataToSave);
     await savePlayerToApi(dataToSave);
+   
     console.log("تم إرسال طلب حفظ بيانات اللاعب إلى السحابة.");
 }
+
