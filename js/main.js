@@ -144,8 +144,73 @@ async function onLeaderboardButtonClick() {
     }
 }
 
+// (الكود السابق في الملف يبقى كما هو)
+
 async function startChallenge(challengeId) {
-    // ... (هذه الدالة تبقى كما هي) ...
+    const userName = ui.userNameInput.value.trim();
+    if (!userName) {
+        alert("يرجى إدخال اسمك أولاً لبدء التحدي.");
+        ui.userNameInput.focus();
+        return;
+    }
+
+    // ▼▼▼ هذا هو الجزء الذي تم تعديله ▼▼▼
+    // إذا لم يكن اللاعب قد سجل دخوله، قم بتسجيل دخوله أولاً
+    if (!player.playerData.name || player.playerData.name !== userName) {
+        console.log("لاعب غير مسجل يحاول بدء تحدي. جاري تسجيل الدخول أولاً...");
+        await onLoginButtonClick();
+        // تحقق مرة أخرى بعد محاولة تسجيل الدخول
+        if (!player.playerData.name) {
+            console.error("فشل تسجيل الدخول، لا يمكن بدء التحدي.");
+            return; // توقف إذا فشل تسجيل الدخول
+        }
+        console.log("تم تسجيل الدخول بنجاح، الآن نستمر لبدء التحدي.");
+    }
+    // ▲▲▲ نهاية التعديل ▲▲▲
+
+    const challenge = activeChallenges.find(c => c.challengeId === challengeId);
+    if (!challenge) {
+        alert("عفواً، حدث خطأ ولم يتم العثور على هذا التحدي.");
+        return;
+    }
+
+    let pageNumber;
+    const contentType = challenge.contentType;
+    const contentValue = challenge.allowedContent;
+
+    if (contentType === 'page') {
+        pageNumber = parseInt(contentValue, 10);
+    } else if (contentType === 'surah') {
+        const surahData = surahMetadata[contentValue];
+        if (surahData) {
+            pageNumber = Math.floor(Math.random() * (surahData.endPage - surahData.startPage + 1)) + surahData.startPage;
+        }
+    }
+
+    if (!pageNumber || isNaN(pageNumber)) {
+        alert(`عفواً، هناك خطأ في إعدادات هذا التحدي.`);
+        console.error("فشل في تحديد رقم الصفحة للتحدي:", challenge);
+        return;
+    }
+
+    const qari = ui.qariSelect.value;
+    const questionsCount = parseInt(challenge.questionsCount, 10);
+    if (!isNaN(questionsCount)) {
+        console.log(`بدء التحدي: ${challenge.challengeName}. تم تحديد الصفحة: ${pageNumber}.`);
+        startTestWithSettings({
+            pageNumber,
+            qari,
+            questionsCount,
+            userName: player.playerData.name, // استخدم الاسم من بيانات اللاعب
+            isChallenge: true
+        });
+    } else {
+        alert(`عفواً، هناك خطأ في إعدادات التحدي (عدد الأسئلة غير صالح).`);
+    }
+}
+
+// (بقية الكود في الملف يبقى كما هو)
+
 }
 
 async function startTestWithSettings(settings) {
@@ -171,3 +236,4 @@ async function startTestWithSettings(settings) {
 
 // --- 4. تشغيل التطبيق ---
 initialize();
+
