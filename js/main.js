@@ -211,7 +211,6 @@ async function startChallenge(challengeId) {
 
 // (بقية الكود في الملف يبقى كما هو)
 
-}
 
 async function startTestWithSettings(settings) {
     if (!settings.pageNumber || isNaN(settings.pageNumber)) {
@@ -236,4 +235,5 @@ async function startTestWithSettings(settings) {
 
 // --- 4. تشغيل التطبيق ---
 initialize();
+
 
